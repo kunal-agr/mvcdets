@@ -35,7 +35,7 @@
                     <%
                         }
                     %>
-                        <form role="form" action="login" method="post">
+                        <form role="form" action="user?action=login" method="post">
                             <fieldset>
 
                                 <div class="form-group">
