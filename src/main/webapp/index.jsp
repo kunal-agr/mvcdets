@@ -25,6 +25,16 @@
                     <div class="panel-heading">Log in</div>
 
                     <div class="panel-body">
+                    <%
+                        String error = request.getParameter("error");
+                        if("1".equals(error)) {
+                    %>
+                        <div class="alert alert-danger text-center">
+                            Invalid email or password
+                        </div>
+                    <%
+                        }
+                    %>
                         <form role="form" action="login" method="post">
                             <fieldset>
 
