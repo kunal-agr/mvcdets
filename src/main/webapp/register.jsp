@@ -34,11 +34,20 @@
 
                 <div class="login-panel panel panel-default">
                     <div class="panel-heading">Sign Up</div>
-
+                    <%
+                        String success = request.getParameter("error");
+                        if("1".equals(success)) {
+                    %>
+                        <div class="alert alert-danger text-center">
+                            You have registered successfully
+                        </div>
+                    <%
+                        }
+                    %>
                     <div class="panel-body">
                         <form name="signup"
                               method="post"
-                              action="#"
+                              action="user?action=register"
                               onsubmit="return checkpass();">
 
                             <fieldset>

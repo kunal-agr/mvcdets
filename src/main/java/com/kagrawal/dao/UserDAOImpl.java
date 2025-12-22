@@ -74,7 +74,7 @@ public class UserDAOImpl implements UserDAO {
     }
 
     @Override
-    public void addUser(User user) {
+    public boolean addUser(User user) {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(INSERT_USER)) {
 
@@ -83,9 +83,10 @@ public class UserDAOImpl implements UserDAO {
             stmt.setString(3, user.getPassword());
 
             stmt.executeUpdate();
-
+            return true;
         } catch (SQLException e) {
             e.printStackTrace(); // later -> throw DAOException
         }
+        return false;
     }
 }
