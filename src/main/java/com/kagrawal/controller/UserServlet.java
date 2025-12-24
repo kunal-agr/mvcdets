@@ -7,32 +7,38 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 
 @WebServlet("/user")
 public class UserServlet extends HttpServlet {
-    UserDAOImpl userDAO = new UserDAOImpl();
-    String name = null;
-    String email = null;
-    String password = null;
+
+    private final UserDAOImpl userDAO = new UserDAOImpl();
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
         doGet(req, resp);
     }
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+
         String action = req.getParameter("action");
 
-        try{
-            switch (action) {
-                case"login":loginUser(req, resp);
-                    break;
-
-                case"register":registerUser(req, resp);
-                    break;
+        try {
+            if ("login".equals(action)) {
+                loginUser(req, resp);
+            } else if ("register".equals(action)) {
+                registerUser(req, resp);
+            } else if ("forgot".equals(action)) {
+                resetPassword(req,resp);
+            } else if("reset".equals(action)) {
+                updatePassword(req,resp);
+            }else {
+                resp.sendRedirect("index.jsp");
             }
         } catch (Exception e) {
             req.setAttribute("errorMessage", e.getMessage());
@@ -42,30 +48,86 @@ public class UserServlet extends HttpServlet {
         }
     }
 
-    void loginUser(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        User user = null;
-        email = req.getParameter("email");
-        password = req.getParameter("password");
+    private void loginUser(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
 
-        user = userDAO.validateUser(email, password);
+        String email = req.getParameter("email");
+        String password = req.getParameter("password");
+
+        User user = userDAO.validateUser(email, password);
 
         if (user != null) {
-            req.getSession(true).setAttribute("user",user);
+            req.getSession(true).setAttribute("user", user);
             resp.sendRedirect("dashboard.jsp");
         } else {
             resp.sendRedirect("index.jsp?error=1");
         }
     }
 
-    void registerUser(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        name = req.getParameter("name");
-        email = req.getParameter("email");
-        password = req.getParameter("password");
+    private void registerUser(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
 
-        boolean result = userDAO.addUser(new User(name, email, password));
+        String name = req.getParameter("name");
+        String email = req.getParameter("email");
+        String password = req.getParameter("password");
+
+        String mobileParam = req.getParameter("mobile");
+        Long mobile = null;
+
+        if (mobileParam != null && !mobileParam.trim().isEmpty()) {
+            mobile = Long.parseLong(mobileParam);
+        }
+
+        User user = new User(name, email, password, mobile);
+
+        boolean result = userDAO.addUser(user);
+
         if (result)
             resp.sendRedirect("index.jsp?success=1");
         else
             resp.sendRedirect("index.jsp?success=0");
+    }
+
+    private void resetPassword(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
+
+        String email = req.getParameter("email");
+        String mobileParam = req.getParameter("mobile");
+
+        Long mobile = null;
+        if (mobileParam != null && !mobileParam.trim().isEmpty()) {
+            mobile = Long.parseLong(mobileParam);
+        }
+
+        User user = userDAO.validateUserForResetPassword(email, mobile);
+
+        if (user != null) {
+            req.getSession(true).setAttribute("resetUserId", user.getUserId());
+            req.getSession().setAttribute("resetUserId", user.getUserId());
+            resp.sendRedirect("reset-password.jsp");
+        } else {
+            resp.sendRedirect("index.jsp?error=2");
+        }
+    }
+
+    private void updatePassword(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
+        HttpSession session = req.getSession(false);
+        Integer userId = (Integer) session.getAttribute("resetUserId");
+
+        if (userId == null) {
+            resp.sendRedirect("resetPassword.jsp");
+            return;
+        }
+
+        String password = req.getParameter("newpassword");
+        boolean result = userDAO.updatePassword(userId,password);
+
+        if (result) {
+            session.invalidate();
+            resp.sendRedirect("index.jsp");
+        } else {
+            resp.sendRedirect("index.jsp?error=3");
+        }
     }
 }

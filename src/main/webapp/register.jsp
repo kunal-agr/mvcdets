@@ -34,16 +34,6 @@
 
                 <div class="login-panel panel panel-default">
                     <div class="panel-heading">Sign Up</div>
-                    <%
-                        String success = request.getParameter("error");
-                        if("1".equals(success)) {
-                    %>
-                        <div class="alert alert-danger text-center">
-                            You have registered successfully
-                        </div>
-                    <%
-                        }
-                    %>
                     <div class="panel-body">
                         <form name="signup"
                               method="post"
@@ -64,6 +54,16 @@
                                            placeholder="E-mail"
                                            name="email"
                                            type="email"
+                                           required>
+                                </div>
+
+                                <div class="form-group">
+                                    <input class="form-control"
+                                           max = 10
+                                           min = 10
+                                           placeholder="Mobile Number"
+                                           name="mobile"
+                                           type="text"
                                            required>
                                 </div>
 

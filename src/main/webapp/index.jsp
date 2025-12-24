@@ -26,11 +26,30 @@
 
                     <div class="panel-body">
                     <%
-                        String error = request.getParameter("error");
+                        String error = (String) request.getParameter("error");
+                        String success = (String) request.getParameter("success");
                         if("1".equals(error)) {
                     %>
                         <div class="alert alert-danger text-center">
                             Invalid email or password
+                        </div>
+                    <%
+                        } if("2".equals(error)) {
+                    %>
+                        <div class="alert alert-danger text-center">
+                            Invalid email or password
+                        </div>
+                    <%
+                        } if ("3".equals(error)) {
+                    %>
+                        <div class="alert alert-danger text-center">
+                            Password cannot be reset
+                        </div>
+                    <%
+                        } if("1".equals(success)) {
+                    %>
+                        <div class="alert alert-success text-center">
+                            You have registered successfully
                         </div>
                     <%
                         }
