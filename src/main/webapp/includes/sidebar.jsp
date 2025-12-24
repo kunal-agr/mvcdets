@@ -11,9 +11,9 @@
         <%
             String username = "User";
 
-                if (request.getSession(false).getAttribute("userName") != null) {
-                    username = session.getAttribute("userName").toString();
-                }
+            if (request.getSession(false).getAttribute("userName") != null) {
+                username = session.getAttribute("userName").toString();
+            }
         %>
 
         <!-- Username (will be set from session later) -->

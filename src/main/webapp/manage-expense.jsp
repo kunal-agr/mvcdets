@@ -2,86 +2,162 @@
 <%@ page import="java.util.*, com.kagrawal.model.Expense" %>
 
 <%
-    Integer uid = null;
-
-    if (session != null) {
-        if (session.getAttribute("userId") != null) {
-            uid = (Integer) session.getAttribute("userId");
-        } else if (session.getAttribute("userid") != null) {
-            uid = (Integer) session.getAttribute("userid");
-        }
-    }
-
-    if (uid == null) {
-        response.sendRedirect("logout.jsp");
+    // Session check
+    if (session == null || session.getAttribute("userId") == null) {
+        response.sendRedirect("login.jsp");
         return;
     }
-     if (request.getAttribute("expenses") == null) {
-            response.sendRedirect("expense?action=manage");
-            return;
-     }
+
+    // 🔥 CALL SERVLET ONLY IF DATA NOT PRESENT
+    if (request.getAttribute("expenses") == null) {
+        RequestDispatcher rd = request.getRequestDispatcher("expense?action=manage");
+        rd.forward(request, response);
+        return; // VERY IMPORTANT
+    }
+
+    // Data already loaded by servlet
     List<Expense> list = (List<Expense>) request.getAttribute("expenses");
+    String name = (String) session.getAttribute("userName");
+    String msg = request.getParameter("msg");
 %>
 
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>Manage Expense</title>
-        <link href="<%=request.getContextPath()%>/css/bootstrap.min.css" rel="stylesheet">
-    </head>
+<head>
+    <meta charset="utf-8">
+    <title>Daily Expense Tracker || Manage Expense</title>
 
-    <body>
-    <div class="container" style="margin-top:50px;">
-        <h3>Manage Expenses</h3>
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/font-awesome.min.css" rel="stylesheet">
+    <link href="css/styles.css" rel="stylesheet">
+</head>
 
-        <table class="table table-bordered">
-            <thead>
-            <tr>
-                <th>#</th>
-                <th>Description</th>
-                <th>Amount</th>
-                <th>Date</th>
-                <th>Category</th>
-                <th>Action</th>
-            </tr>
-            </thead>
+<body>
 
-            <tbody>
-            <%
-                if (list != null && !list.isEmpty()) {
-                    int i = 1;
-                    for (Expense e : list) {
-            %>
-            <tr>
-                <td><%= i++ %></td>
-                <td><%= e.getDescription() %></td>
-                <td>₹ <%= e.getAmount() %></td>
-                <td><%= e.getExpenseDate() %></td>
-                <td><%= e.getCategory() %></td>
-                <td>
-                    <a href="expense?action=delete&expenseId=<%= e.getExpenseId() %>"
-                       onclick="return confirm('Delete this expense?')"
-                       class="btn btn-danger btn-xs">
-                        Delete
-                    </a>
-                </td>
-            </tr>
-            <%
-                    }
-                } else {
-            %>
-            <tr>
-                <td colspan="6" style="text-align:center;">No expenses found</td>
-            </tr>
-            <%
-                }
-            %>
-            </tbody>
-        </table>
-        <p>Total records: <%= list != null ? list.size() : 0 %></p>
-        <a href="dashboard.jsp" class="btn btn-secondary">
-                        ← Back to Dashboard
-                    </a>
+<!-- ===== NAVBAR ===== -->
+<nav class="navbar navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed"
+                    data-toggle="collapse" data-target="#sidebar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="dashboard.jsp">Daily Expense Tracker</a>
+        </div>
     </div>
-    </body>
+</nav>
+
+<!-- ===== SIDEBAR ===== -->
+<div id="sidebar-collapse" class="col-sm-3 col-lg-2 sidebar">
+
+    <div class="profile-sidebar">
+        <div class="profile-userpic">
+            <img src="http://placehold.it/50/30a5ff/fff" class="img-responsive">
+        </div>
+        <div class="profile-usertitle">
+            <div class="profile-usertitle-name"><%= name %></div>
+            <div class="profile-usertitle-status">
+                <span class="indicator label-success"></span> Online
+            </div>
+        </div>
+    </div>
+
+    <ul class="nav menu">
+        <li><a href="dashboard.jsp"><em class="fa fa-dashboard"></em> Dashboard</a></li>
+
+        <li class="parent active">
+            <a data-toggle="collapse" href="#sub-item-1">
+                <em class="fa fa-navicon"></em> Expenses
+                <span class="icon pull-right"><em class="fa fa-minus"></em></span>
+            </a>
+            <ul class="children collapse in" id="sub-item-1">
+                <li><a href="add-expense.jsp">Add Expenses</a></li>
+                <li class="active"><a href="manage-expense.jsp">Manage Expenses</a></li>
+            </ul>
+        </li>
+
+        <li class="parent">
+            <a data-toggle="collapse" href="#sub-item-2">
+                <em class="fa fa-navicon"></em> Expense Report
+                <span class="icon pull-right"><em class="fa fa-plus"></em></span>
+            </a>
+            <ul class="children collapse" id="sub-item-2">
+                <li><a href="expense-datewise-reports.jsp">Daywise</a></li>
+                <li><a href="expense-monthwise-reports.jsp">Monthwise</a></li>
+                <li><a href="expense-yearwise-reports.jsp">Yearwise</a></li>
+            </ul>
+        </li>
+
+        <li><a href="logout.jsp"><em class="fa fa-power-off"></em> Logout</a></li>
+    </ul>
+</div>
+
+<!-- ===== MAIN CONTENT ===== -->
+<div class="col-sm-9 col-sm-offset-3 col-lg-10 col-lg-offset-2 main">
+
+    <div class="panel panel-default" style="margin-top:60px;">
+        <div class="panel-heading">Manage Expenses</div>
+
+        <div class="panel-body">
+
+            <p style="color:red;text-align:center;">
+                <%= msg != null ? msg : "" %>
+            </p>
+
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+                    <%
+                        if (list != null && !list.isEmpty()) {
+                            int i = 1;
+                            for (Expense e : list) {
+                    %>
+                        <tr>
+                            <td><%= i++ %></td>
+                            <td><%= e.getDescription() %></td>
+                            <td>₹ <%= e.getAmount() %></td>
+                            <td><%= e.getExpenseDate() %></td>
+                            <td>
+                                <a href="expense?action=delete&expenseId=<%= e.getExpenseId() %>"
+                                   onclick="return confirm('Delete this expense?')">
+                                    Delete
+                                </a>
+                            </td>
+                        </tr>
+                    <%
+                            }
+                        } else {
+                    %>
+                        <tr>
+                            <td colspan="5" class="text-center">No expenses found</td>
+                        </tr>
+                    <%
+                        }
+                    %>
+                    </tbody>
+
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JS (LOAD ONCE) -->
+<script src="js/jquery-1.11.1.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/custom.js"></script>
+
+</body>
 </html>

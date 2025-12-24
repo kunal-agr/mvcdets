@@ -1,79 +1,154 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ page import="java.util.*" %>
 <%
-    if (session == null || session.getAttribute("userId") == null) {
+    Integer userId = null;
+    String username = "User";
+
+    if (session != null) {
+        if (session.getAttribute("userId") != null) {
+            userId = (Integer) session.getAttribute("userId");
+        }
+
+        if (session.getAttribute("userName") != null) {
+            username = session.getAttribute("userName").toString();
+        }
+    }
+
+    if (userId == null) {
         response.sendRedirect("logout.jsp");
         return;
     }
+
+    String msg = request.getParameter("msg");
 %>
 <!DOCTYPE html>
 <html>
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Daily Expense Tracker - Login</title>
-
-        <!-- Bootstrap CSS -->
-        <link rel="stylesheet" href="<c:url value='/css/bootstrap.min.css'/>">
-        <link rel="stylesheet" href="<c:url value='/css/datepicker3.css'/>">
-        <link rel="stylesheet" href="<c:url value='/css/styles.css'/>">
+        <title>Daily Expense Tracker || Add Expense</title>
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/font-awesome.min.css" rel="stylesheet">
+        <link href="css/datepicker3.css" rel="stylesheet">
+        <link href="css/styles.css" rel="stylesheet">
     </head>
     <body>
-
-    <div class="container mt-5">
-        <h3>Add Expense</h3>
-
-        <%
-            String msg = (String) request.getParameter("msg");
-            if (msg != null) {
-        %>
-            <div class="alert alert-info"><%= msg %></div>
-        <%
-                session.removeAttribute("msg");
-            }
-        %>
-
-        <form method="post" action="expense">
-            <input type="hidden" name="action" value="add">
-            <div class="form-group">
-                <label>Date of Expense</label>
-                <input class="form-control" type="date" name="dateExpense" required>
+    <nav class="navbar navbar-custom navbar-fixed-top" role="navigation">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#sidebar-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="dashboard.jsp"><span>Daily Expense Tracker</span></a>
             </div>
-
-            <div class="form-group">
-                <label>Item</label>
-                <input type="text" class="form-control" name="item" required>
-            </div>
-
-            <div class="form-group">
-                <label>Cost of Item</label>
-                <input class="form-control" type="number" step="0.01" name="amount" required>
-            </div>
-
-            <div class="form-group">
-                <label>Category</label>
-                <select name="category" class="form-control">
-                    <option>Food</option>
-                    <option>Transport</option>
-                    <option>Shopping</option>
-                    <option>Rent</option>
-                    <option>Other</option>
-                </select>
-            </div>
-
-            <button type="submit" class="btn btn-primary">Add</button>
-        </form>
-        <div class="mt-3">
-            <a href="dashboard.jsp" class="btn btn-secondary">
-                ← Back to Dashboard
-            </a>
         </div>
+    </nav>
+
+    <div id="sidebar-collapse" class="col-sm-3 col-lg-2 sidebar">
+        <div class="profile-sidebar">
+            <div class="profile-userpic">
+                <img src="http://placehold.it/50/30a5ff/fff" class="img-responsive" alt="">
+            </div>
+            <div class="profile-usertitle">
+                <div class="profile-usertitle-name"><%= username %></div>
+                <div class="profile-usertitle-status"><span class="indicator label-success"></span>Online</div>
+            </div>
+            <div class="clear"></div>
+        </div>
+        <div class="divider"></div>
+
+        <ul class="nav menu">
+            <li class="active"><a href="dashboard.jsp"><em class="fa fa-dashboard">&nbsp;</em> Dashboard</a></li>
+            <li class="parent">
+                <a data-toggle="collapse" href="#sub-item-1">
+                    <em class="fa fa-navicon">&nbsp;</em>Expenses
+                    <span data-toggle="collapse" href="#sub-item-1" class="icon pull-right">
+                        <em class="fa fa-plus"></em>
+                    </span>
+                </a>
+                <ul class="children collapse" id="sub-item-1">
+                    <li><a href="add-expense.jsp"><span class="fa fa-arrow-right">&nbsp;</span> Add Expenses</a></li>
+                    <li><a href="manage-expense.jsp"><span class="fa fa-arrow-right">&nbsp;</span> Manage Expenses</a></li>
+                </ul>
+            </li>
+            <li class="parent">
+                <a data-toggle="collapse" href="#sub-item-2">
+                    <em class="fa fa-navicon">&nbsp;</em>Expense Report
+                    <span data-toggle="collapse" href="#sub-item-2" class="icon pull-right">
+                        <em class="fa fa-plus"></em>
+                    </span>
+                </a>
+                <ul class="children collapse" id="sub-item-2">
+                    <li><a href="expense-datewise-reports.jsp"><span class="fa fa-arrow-right">&nbsp;</span> Daywise Expenses</a></li>
+                    <li><a href="expense-monthwise-reports.jsp"><span class="fa fa-arrow-right">&nbsp;</span> Monthwise Expenses</a></li>
+                    <li><a href="expense-yearwise-reports.jsp"><span class="fa fa-arrow-right">&nbsp;</span> Yearwise Expenses</a></li>
+                </ul>
+            </li>
+            <li><a href="user-profile.jsp"><em class="fa fa-user">&nbsp;</em> Profile</a></li>
+            <li><a href="change-password.jsp"><em class="fa fa-clone">&nbsp;</em> Change Password</a></li>
+            <li><a href="logout.jsp"><em class="fa fa-power-off">&nbsp;</em> Logout</a></li>
+        </ul>
     </div>
 
-    </body>
+    <div class="col-sm-9 col-sm-offset-3 col-lg-10 col-lg-offset-2 main">
+        <div class="row">
+            <ol class="breadcrumb">
+                <li><a href="#"><em class="fa fa-home"></em></a></li>
+                <li class="active">Expense</li>
+            </ol>
+        </div>
 
-    <script src="<c:url value='/js/jquery-1.11.1.min.js'/>"></script>
-    <script src="<c:url value='/js/bootstrap.min.js'/>"></script>
-    <script src="<c:url value='/js/easypiechart.js'/>"></script>
-    <script src="<c:url value='/js/easypiechart-data.js'/>"></script>
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">Expense</div>
+                    <div class="panel-body">
+                        <% if (msg != null) { %>
+                            <div class="alert alert-info"><%= msg %></div>
+                        <% } %>
+
+                        <form method="post" action="expense">
+                            <input type="hidden" name="action" value="add">
+                            <div class="form-group">
+                                <label>Date of Expense</label>
+                                <input class="form-control" type="date" name="dateExpense" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Item</label>
+                                <input type="text" class="form-control" name="item" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Cost of Item</label>
+                                <input class="form-control" type="number" step="0.01" name="amount" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Category</label>
+                                <select name="category" class="form-control">
+                                    <option>Food</option>
+                                    <option>Transport</option>
+                                    <option>Shopping</option>
+                                    <option>Rent</option>
+                                    <option>Other</option>
+                                </select>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Add</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <%@ include file="includes/footer.jsp" %>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    </body>
 </html>
