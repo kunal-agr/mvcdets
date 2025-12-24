@@ -37,7 +37,7 @@ public class ExpenseServlet extends HttpServlet{
                 break;
             case "manage":manageExpense(req,resp);
                 break;
-            case "delete":
+            case "delete":deleteExpense(req,resp);
                 break;
             case "reports":
                 break;
@@ -89,4 +89,11 @@ public class ExpenseServlet extends HttpServlet{
         RequestDispatcher rd = req.getRequestDispatcher("manage-expense.jsp");
         rd.forward(req, resp);
     }
+
+    private void deleteExpense(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        int expenseId = Integer.parseInt(req.getParameter("expenseId"));
+        expenseDAO.deleteExpense(expenseId);
+        resp.sendRedirect("expense?action=manage");
+    }
+
 }

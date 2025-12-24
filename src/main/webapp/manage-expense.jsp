@@ -59,7 +59,7 @@
                 <td><%= e.getExpenseDate() %></td>
                 <td><%= e.getCategory() %></td>
                 <td>
-                    <a href="expense?action=delete?id=<%=uid%>"
+                    <a href="expense?action=delete&expenseId=<%= e.getExpenseId() %>"
                        onclick="return confirm('Delete this expense?')"
                        class="btn btn-danger btn-xs">
                         Delete

@@ -14,6 +14,8 @@ import java.util.List;
 public class ExpenseDAOImpl implements ExpenseDAO {
     private static final String INSERT_EXPENSE = "INSERT INTO tblexpense (user_id, expense_date, amount, category, description) VALUES (?, ?, ?, ?, ?)";
     private static final String SELECT_BY_USER = "SELECT * FROM tblexpense WHERE user_id = ? ORDER BY expense_date DESC";
+    private static final String DELETE_EXPENSE = "DELETE FROM tblexpense WHERE expense_id = ?";
+
     @Override
     public boolean addExpense(Expense e) {
         boolean status = false;
@@ -64,5 +66,18 @@ public class ExpenseDAOImpl implements ExpenseDAO {
 
         return expensesList;
     }
+
+    @Override
+    public void deleteExpense(int expenseId) {
+        try(Connection con = DBConnection.getConnection();
+            PreparedStatement stmt = con.prepareStatement(DELETE_EXPENSE)) {
+            stmt.setInt(1, expenseId);
+
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
 
 }

@@ -7,4 +7,5 @@ import java.util.List;
 public interface ExpenseDAO {
     boolean addExpense(Expense expense);
     List<Expense> getExpensesByUser(int userId);
+    void deleteExpense(int expenseId);
 }
