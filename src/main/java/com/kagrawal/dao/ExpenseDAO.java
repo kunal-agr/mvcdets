@@ -1,4 +1,10 @@
 package com.kagrawal.dao;
 
-public class ExpenseDAO {
+import com.kagrawal.model.Expense;
+
+import java.util.List;
+
+public interface ExpenseDAO {
+    boolean addExpense(Expense expense);
+    List<Expense> getExpensesByUser(int userId);
 }

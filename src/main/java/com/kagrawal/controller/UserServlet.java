@@ -57,7 +57,10 @@ public class UserServlet extends HttpServlet {
         User user = userDAO.validateUser(email, password);
 
         if (user != null) {
-            req.getSession(true).setAttribute("user", user);
+            HttpSession session = req.getSession(true);
+            session.setAttribute("user", user);
+            session.setAttribute("userId", user.getUserId());
+            session.setAttribute("userName", user.getName());
             resp.sendRedirect("dashboard.jsp");
         } else {
             resp.sendRedirect("index.jsp?error=1");
