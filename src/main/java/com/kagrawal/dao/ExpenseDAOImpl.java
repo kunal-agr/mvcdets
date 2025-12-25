@@ -33,6 +33,31 @@ public class ExpenseDAOImpl implements ExpenseDAO {
             "FROM tblexpense " +
             "WHERE user_id = ? " +
             "AND expense_date = CURRENT_DATE - INTERVAL '1 day'";
+
+    private static final String WEEK_EXPENSE =
+            "SELECT COALESCE(SUM(amount), 0) AS last_7_days_expense " +
+                    "FROM tblexpense " +
+                    "WHERE user_id = ? " +
+                    "AND expense_date >= CURRENT_DATE - INTERVAL '7 day' " +
+                    "AND expense_date < CURRENT_DATE";
+
+    private static final String MONTH_EXPENSE = "SELECT COALESCE(SUM(amount), 0) AS month_expense " +
+            "FROM tblexpense " +
+            "WHERE user_id = ? " +
+            "AND expense_date >= date_trunc('month', CURRENT_DATE) " +
+            "AND expense_date < date_trunc('month', CURRENT_DATE + INTERVAL '1 month')";
+
+    private static final String YEAR_EXPENSE = "SELECT COALESCE(SUM(amount), 0) AS year_expense " +
+            "FROM tblexpense " +
+            "WHERE user_id = ? " +
+            "AND expense_date >= date_trunc('year', CURRENT_DATE) " +
+            "AND expense_date < date_trunc('year', CURRENT_DATE + INTERVAL '1 year')";
+
+    private static final String TOTAL_EXPENSE =
+            "SELECT COALESCE(SUM(amount), 0) AS lifetime_expense " +
+                    "FROM tblexpense " +
+                    "WHERE user_id = ?";
+
     @Override
     public boolean addExpense(Expense e) {
         boolean status = false;
@@ -208,4 +233,89 @@ public class ExpenseDAOImpl implements ExpenseDAO {
         }
         return total;
     }
+
+    @Override
+    public BigDecimal weekExpense(int userId) {
+        BigDecimal total = BigDecimal.ZERO;
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement stmt = con.prepareStatement(WEEK_EXPENSE)) {
+
+            stmt.setInt(1, userId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    total = rs.getBigDecimal(1);
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return total;
+    }
+
+    @Override
+    public BigDecimal monthExpense(int userId) {
+        BigDecimal total = BigDecimal.ZERO;
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement stmt = con.prepareStatement(MONTH_EXPENSE)) {
+
+            stmt.setInt(1, userId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    total = rs.getBigDecimal(1);
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return total;
+    }
+
+    @Override
+    public BigDecimal yearExpense(int userId) {
+        BigDecimal total = BigDecimal.ZERO;
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement stmt = con.prepareStatement(YEAR_EXPENSE)) {
+
+            stmt.setInt(1, userId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    total = rs.getBigDecimal(1);
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return total;
+    }
+
+    @Override
+    public BigDecimal totalExpense(int userId) {
+        BigDecimal total = BigDecimal.ZERO;
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement stmt = con.prepareStatement(TOTAL_EXPENSE)) {
+
+            stmt.setInt(1, userId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    total = rs.getBigDecimal(1);
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return total;
+    }
+
 }

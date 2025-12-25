@@ -162,9 +162,17 @@ public class ExpenseServlet extends HttpServlet{
 
         BigDecimal totalTodayExpense = expenseDAO.todaysExpense(userId);
         BigDecimal yesterdayExpense = expenseDAO.yesterdayExpense(userId);
+        BigDecimal weekExpense = expenseDAO.weekExpense(userId);
+        BigDecimal monthExpense = expenseDAO.monthExpense(userId);
+        BigDecimal yearExpense = expenseDAO.yearExpense(userId);
+        BigDecimal totalExpense = expenseDAO.totalExpense(userId);
 
         req.setAttribute("totalTodayExpense", totalTodayExpense);
         req.setAttribute("yesterdayExpense", yesterdayExpense);
+        req.setAttribute("weekExpense", weekExpense);
+        req.setAttribute("monthExpense", monthExpense);
+        req.setAttribute("yearExpense", yearExpense);
+        req.setAttribute("totalExpense", totalExpense);
 
         req.setAttribute("allExpenses", true);
 

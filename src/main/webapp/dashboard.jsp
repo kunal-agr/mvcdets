@@ -32,6 +32,26 @@
     if (yesterdayExpense == null) {
         yesterdayExpense = BigDecimal.ZERO;
     }
+
+    BigDecimal weekExpense = (BigDecimal) request.getAttribute("weekExpense");
+    if (weekExpense == null) {
+        weekExpense = BigDecimal.ZERO;
+    }
+
+    BigDecimal monthExpense = (BigDecimal) request.getAttribute("monthExpense");
+    if (monthExpense == null) {
+        monthExpense = BigDecimal.ZERO;
+    }
+
+    BigDecimal yearExpense = (BigDecimal) request.getAttribute("yearExpense");
+    if (yearExpense == null) {
+        yearExpense = BigDecimal.ZERO;
+    }
+
+    BigDecimal totalExpense = (BigDecimal) request.getAttribute("totalExpense");
+    if (totalExpense == null) {
+        totalExpense = BigDecimal.ZERO;
+    }
 %>
 
 <!DOCTYPE html>
@@ -151,7 +171,7 @@
                     <div class="panel-body easypiechart-panel">
                         <h4>Last 7 Days Expense</h4>
                         <div class="easypiechart" id="easypiechart-teal" data-percent="-1">
-                            <span class="percent">-1</span>
+                            <span class="percent"><%= weekExpense %></span>
                         </div>
                     </div>
                 </div>
@@ -162,7 +182,7 @@
                     <div class="panel-body easypiechart-panel">
                         <h4>Last 30 Days Expense</h4>
                         <div class="easypiechart" id="easypiechart-red" data-percent="-1">
-                            <span class="percent">-1</span>
+                            <span class="percent"><%= monthExpense %></span>
                         </div>
                     </div>
                 </div>
@@ -173,7 +193,7 @@
                     <div class="panel-body easypiechart-panel">
                         <h4>Current Year Expenses</h4>
                         <div class="easypiechart" id="easypiechart-red" data-percent="-1">
-                            <span class="percent">-1</span>
+                            <span class="percent"><%= yearExpense %></span>
                         </div>
                     </div>
                 </div>
@@ -184,7 +204,7 @@
                     <div class="panel-body easypiechart-panel">
                         <h4>Total Expenses</h4>
                         <div class="easypiechart" id="easypiechart-red" data-percent="-1">
-                            <span class="percent">-1</span>
+                            <span class="percent"><%= totalExpense %></span>
                         </div>
                     </div>
                 </div>
