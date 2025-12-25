@@ -10,6 +10,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.sql.Timestamp;
+import java.time.LocalDate;
 
 @WebServlet("/user")
 public class UserServlet extends HttpServlet {
@@ -39,6 +41,8 @@ public class UserServlet extends HttpServlet {
                 updatePassword(req,resp);
             } else if("changePass".equals(action)) {
                 changePassword(req,resp);
+            } else if("profile".equals(action)) {
+              userProfile(req,resp);
             } else {
                 resp.sendRedirect("index.jsp");
             }
@@ -140,10 +144,6 @@ public class UserServlet extends HttpServlet {
             throws IOException {
 
         HttpSession session = req.getSession(false);
-        if (session == null || session.getAttribute("userId") == null) {
-            resp.sendRedirect("logout.jsp");
-            return;
-        }
 
         int userId = (int) session.getAttribute("userId");
 
@@ -166,5 +166,15 @@ public class UserServlet extends HttpServlet {
         }
     }
 
+    private void userProfile(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
 
+        HttpSession session = req.getSession(false);
+        int userId = (int) session.getAttribute("userId");
+
+        User user = userDAO.getUserById(userId);
+
+        req.setAttribute("user", user);
+        req.getRequestDispatcher("user-profile.jsp").forward(req, resp);
+    }
 }

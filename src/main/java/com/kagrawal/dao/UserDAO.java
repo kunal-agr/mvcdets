@@ -2,6 +2,8 @@ package com.kagrawal.dao;
 
 import com.kagrawal.model.User;
 
+import java.sql.Timestamp;
+
 public interface UserDAO {
 
     User validateUser(String email, String password);

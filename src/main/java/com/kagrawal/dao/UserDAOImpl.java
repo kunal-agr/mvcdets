@@ -3,11 +3,7 @@ package com.kagrawal.dao;
 import com.kagrawal.model.User;
 import com.kagrawal.util.DBConnection;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Types;
+import java.sql.*;
 
 public class UserDAOImpl implements UserDAO {
 
@@ -16,7 +12,7 @@ public class UserDAOImpl implements UserDAO {
                     "FROM tbluser WHERE email = ? AND password = ?";
 
     private static final String SELECT_BY_ID =
-            "SELECT user_id, name, email, mobile " +
+            "SELECT user_id, name, email, mobile, created_at " +
                     "FROM tbluser WHERE user_id = ?";
 
     private static final String INSERT_USER =
@@ -42,9 +38,7 @@ public class UserDAOImpl implements UserDAO {
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
 
-                    Long mobile = rs.getObject("mobile") != null
-                            ? rs.getLong("mobile")
-                            : null;
+                    Long mobile = rs.getObject("mobile") != null ? rs.getLong("mobile") : null;
 
                     return new User(
                             rs.getInt("user_id"),
@@ -64,6 +58,9 @@ public class UserDAOImpl implements UserDAO {
 
     @Override
     public User getUserById(int userId) {
+
+        User user = null;
+
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SELECT_BY_ID)) {
 
@@ -76,21 +73,23 @@ public class UserDAOImpl implements UserDAO {
                             ? rs.getLong("mobile")
                             : null;
 
-                    return new User(
+                    user = new User(
                             rs.getInt("user_id"),
                             rs.getString("name"),
                             rs.getString("email"),
                             null,
                             mobile,
-                            null
+                            rs.getTimestamp("created_at")
                     );
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return null;
+
+        return user;
     }
+
 
     @Override
     public boolean addUser(User user) {
@@ -177,5 +176,4 @@ public class UserDAOImpl implements UserDAO {
         }
         return status;
     }
-
 }
