@@ -39,7 +39,7 @@ public class ExpenseServlet extends HttpServlet{
                 break;
             case "delete":deleteExpense(req,resp);
                 break;
-            case "reports":
+            case "dateexpense":dateWiseExpense(req,resp);
                 break;
             default: getProfileUserId(req,resp);
         }
@@ -96,4 +96,19 @@ public class ExpenseServlet extends HttpServlet{
         resp.sendRedirect("expense?action=manage");
     }
 
+    private void dateWiseExpense(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        HttpSession session = req.getSession(false);
+        int userId = (int) session.getAttribute("userId");
+
+        LocalDate fromDate = LocalDate.parse(req.getParameter("fromdate"));
+        LocalDate toDate = LocalDate.parse(req.getParameter("todate"));
+
+        BigDecimal grandTotal = expenseDAO.getDayWiseExpenseTotal(userId, fromDate, toDate);
+        req.setAttribute("grandTotal", grandTotal);
+        req.setAttribute("fromDate", fromDate);
+        req.setAttribute("toDate", toDate);
+
+        RequestDispatcher rd = req.getRequestDispatcher("expense-datewise-result.jsp");
+        rd.forward(req, resp);
+    }
 }

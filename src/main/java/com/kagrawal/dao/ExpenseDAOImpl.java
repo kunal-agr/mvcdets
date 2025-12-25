@@ -3,10 +3,8 @@ package com.kagrawal.dao;
 import com.kagrawal.model.Expense;
 import com.kagrawal.util.DBConnection;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.math.BigDecimal;
+import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +13,10 @@ public class ExpenseDAOImpl implements ExpenseDAO {
     private static final String INSERT_EXPENSE = "INSERT INTO tblexpense (user_id, expense_date, amount, category, description) VALUES (?, ?, ?, ?, ?)";
     private static final String SELECT_BY_USER = "SELECT * FROM tblexpense WHERE user_id = ? ORDER BY expense_date DESC";
     private static final String DELETE_EXPENSE = "DELETE FROM tblexpense WHERE expense_id = ?";
+    private static final String DAY_WISE =
+            "SELECT COALESCE(SUM(amount), 0) " +
+                    "FROM tblexpense " +
+                    "WHERE user_id = ? AND expense_date BETWEEN ? AND ?";
 
     @Override
     public boolean addExpense(Expense e) {
@@ -79,5 +81,26 @@ public class ExpenseDAOImpl implements ExpenseDAO {
         }
     }
 
+    @Override
+    public BigDecimal getDayWiseExpenseTotal(int userId, LocalDate fdate, LocalDate tdate) {
+        BigDecimal total = BigDecimal.ZERO;
 
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement stmt = con.prepareStatement(DAY_WISE)) {
+
+            stmt.setInt(1, userId);
+            stmt.setDate(2, Date.valueOf(fdate));
+            stmt.setDate(3, Date.valueOf(tdate));
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    total = rs.getBigDecimal(1);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return total;
+    }
 }

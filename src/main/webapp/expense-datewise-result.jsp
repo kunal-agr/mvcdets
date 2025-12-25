@@ -1,20 +1,27 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%
-    // Keeping your logic exactly as it was in the "new" file
-    Integer userId = null;
-    String username = "User";
+<%@ page import="java.math.BigDecimal" %>
 
+<%
+    if (session == null || session.getAttribute("userId") == null) {
+        response.sendRedirect("logout.jsp");
+        return;
+    }
+    String username = "User";
     if (session != null) {
-        if (session.getAttribute("userId") != null) {
-            userId = (Integer) session.getAttribute("userId");
-        }
         if (session.getAttribute("userName") != null) {
             username = session.getAttribute("userName").toString();
         }
     }
+    BigDecimal grandTotal =
+            (BigDecimal) request.getAttribute("grandTotal");
 
-    if (userId == null) {
-        response.sendRedirect("logout.jsp");
+    java.time.LocalDate fromDate =
+            (java.time.LocalDate) request.getAttribute("fromDate");
+
+    java.time.LocalDate toDate =
+            (java.time.LocalDate) request.getAttribute("toDate");
+
+    if (grandTotal == null || fromDate == null || toDate == null) {
+        response.sendRedirect("expense-datewise-reports.jsp");
         return;
     }
 %>
@@ -24,26 +31,25 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Daily Expense Tracker - Dashboard</title>
+        <title>Daily Expense Tracker || Datewise Expense Report</title>
         <link href="css/bootstrap.min.css" rel="stylesheet">
         <link href="css/font-awesome.min.css" rel="stylesheet">
         <link href="css/datepicker3.css" rel="stylesheet">
         <link href="css/styles.css" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,500,600,700" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css?family=Montserrat:300,300i,400,400i,500,500i,600,600i,700,700i" rel="stylesheet">
     </head>
-
     <body>
+
     <nav class="navbar navbar-custom navbar-fixed-top" role="navigation">
         <div class="container-fluid">
             <div class="navbar-header">
-                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#sidebar-collapse">
-                    <span class="sr-only">Toggle navigation</span>
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#sidebar-collapse"><span class="sr-only">Toggle navigation</span>
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
+                    <span class="icon-bar"></span></button>
                 <a class="navbar-brand" href="dashboard.jsp"><span>Daily Expense Tracker</span></a>
             </div>
+
         </div>
     </nav>
 
@@ -94,94 +100,57 @@
     </div>
 
     <div class="col-sm-9 col-sm-offset-3 col-lg-10 col-lg-offset-2 main">
-
         <div class="row">
             <ol class="breadcrumb">
                 <li><a href="#"><em class="fa fa-home"></em></a></li>
-                <li class="active">Dashboard</li>
+                <li class="active">Datewise Expense Report</li>
             </ol>
-        </div>
+        </div><!--/.row-->
 
         <div class="row">
             <div class="col-lg-12">
-                <h1 class="page-header">Dashboard</h1>
-            </div>
+                <div class="panel panel-default">
+                    <div class="panel-heading">Datewise Expense Report</div>
+                    <div class="panel-body">
+                        <div class="col-md-12">
+                            <h5 align="center" style="color:blue">
+                                Datewise Expense Report from <%= fromDate %> to <%= toDate %>
+                            </h5>
+                            <hr />
+                            <table id="datatable" class="table table-bordered dt-responsive nowrap"
+                                   style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                                <thead>
+                                    <tr>
+                                        <th>S.NO</th>
+                                        <th>Date</th>
+                                        <th>Expense Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                <tr>
+                                    <th colspan="2" style="text-align:center">Grand Total</th>
+                                    <td><%= grandTotal %></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div><!-- /.panel-->
+        </div><!-- /.col-->
+        <div class="col-sm-12">
+            <p class="back-link">Daily Expense Tracker</p>
         </div>
-
-        <div class="row">
-            <div class="col-xs-6 col-md-3">
-                <div class="panel panel-default">
-                    <div class="panel-body easypiechart-panel">
-                        <h4>Today's Expense</h4>
-                        <div class="easypiechart" id="easypiechart-blue" data-percent="-1">
-                            <span class="percent">-1</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-xs-6 col-md-3">
-                <div class="panel panel-default">
-                    <div class="panel-body easypiechart-panel">
-                        <h4>Yesterday's Expense</h4>
-                        <div class="easypiechart" id="easypiechart-orange" data-percent="-1">
-                            <span class="percent">-1</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-xs-6 col-md-3">
-                <div class="panel panel-default">
-                    <div class="panel-body easypiechart-panel">
-                        <h4>Last 7 Days Expense</h4>
-                        <div class="easypiechart" id="easypiechart-teal" data-percent="-1">
-                            <span class="percent">-1</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-xs-6 col-md-3">
-                <div class="panel panel-default">
-                    <div class="panel-body easypiechart-panel">
-                        <h4>Last 30 Days Expense</h4>
-                        <div class="easypiechart" id="easypiechart-red" data-percent="-1">
-                            <span class="percent">-1</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div><div class="row">
-            <div class="col-xs-6 col-md-3">
-                <div class="panel panel-default">
-                    <div class="panel-body easypiechart-panel">
-                        <h4>Current Year Expenses</h4>
-                        <div class="easypiechart" id="easypiechart-red" data-percent="-1">
-                            <span class="percent">-1</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-xs-6 col-md-3">
-                <div class="panel panel-default">
-                    <div class="panel-body easypiechart-panel">
-                        <h4>Total Expenses</h4>
-                        <div class="easypiechart" id="easypiechart-red" data-percent="-1">
-                            <span class="percent">-1</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div></div>
-
-    <%@ include file="includes/footer.jsp" %>
-
+        </div><!-- /.row -->
+    </div><!--/.main-->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
     <script src="js/jquery-1.11.1.min.js"></script>
     <script src="js/bootstrap.min.js"></script>
+    <script src="js/chart.min.js"></script>
+    <script src="js/chart-data.js"></script>
     <script src="js/easypiechart.js"></script>
     <script src="js/easypiechart-data.js"></script>
+    <script src="js/bootstrap-datepicker.js"></script>
     <script src="js/custom.js"></script>
     </body>
 </html>
