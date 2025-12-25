@@ -1,4 +1,4 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" import="java.math.BigDecimal" %>
 <%
     // Keeping your logic exactly as it was in the "new" file
     Integer userId = null;
@@ -16,6 +16,21 @@
     if (userId == null) {
         response.sendRedirect("logout.jsp");
         return;
+    }
+    if (request.getAttribute("allExpenses") == null) {
+        RequestDispatcher rd = request.getRequestDispatcher("expense?action=allExpense");
+        rd.forward(request, response);
+        return;
+    }
+
+    BigDecimal todaysExpense = (BigDecimal) request.getAttribute("totalTodayExpense");
+    if (todaysExpense == null) {
+        todaysExpense = BigDecimal.ZERO;
+    }
+
+    BigDecimal yesterdayExpense = (BigDecimal) request.getAttribute("yesterdayExpense");
+    if (yesterdayExpense == null) {
+        yesterdayExpense = BigDecimal.ZERO;
     }
 %>
 
@@ -114,7 +129,7 @@
                     <div class="panel-body easypiechart-panel">
                         <h4>Today's Expense</h4>
                         <div class="easypiechart" id="easypiechart-blue" data-percent="-1">
-                            <span class="percent">-1</span>
+                            <span class="percent"><%= todaysExpense %></span>
                         </div>
                     </div>
                 </div>
@@ -125,7 +140,7 @@
                     <div class="panel-body easypiechart-panel">
                         <h4>Yesterday's Expense</h4>
                         <div class="easypiechart" id="easypiechart-orange" data-percent="-1">
-                            <span class="percent">-1</span>
+                            <span class="percent"><%= yesterdayExpense %></span>
                         </div>
                     </div>
                 </div>

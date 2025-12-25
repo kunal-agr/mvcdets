@@ -13,4 +13,6 @@ public interface ExpenseDAO {
     BigDecimal getDayWiseExpenseTotal(int userId, LocalDate fdate, LocalDate tdate);
     BigDecimal getMonthWiseExpenseTotal(int userId, LocalDate fdate, LocalDate tdate);
     BigDecimal getYearWiseExpenseTotal(int userId, LocalDate fdate, LocalDate tdate);
+    BigDecimal todaysExpense(int userId);
+    BigDecimal yesterdayExpense(int userId);
 }

@@ -15,6 +15,7 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -45,6 +46,8 @@ public class ExpenseServlet extends HttpServlet{
                 break;
             case "yearexpense":yearWiseExpense(req,resp);
                 break;
+            case "allExpense":allExpenses(req,resp);
+                break;
             default: getProfileUserId(req,resp);
         }
     }
@@ -74,7 +77,6 @@ public class ExpenseServlet extends HttpServlet{
         expense.setDescription(description);
 
         boolean status = expenseDAO.addExpense(expense);
-
         if (status) {
             resp.sendRedirect("add-expense.jsp?msg=Expense added");
         } else {
@@ -118,7 +120,6 @@ public class ExpenseServlet extends HttpServlet{
 
     private void monthWiseExpense(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-
         HttpSession session = req.getSession(false);
         int userId = (int) session.getAttribute("userId");
 
@@ -144,8 +145,7 @@ public class ExpenseServlet extends HttpServlet{
         LocalDate fromDate = LocalDate.parse(req.getParameter("fromYear"));
         LocalDate toDate   = LocalDate.parse(req.getParameter("toYear"));
 
-        BigDecimal grandTotal =
-                expenseDAO.getYearWiseExpenseTotal(userId, fromDate, toDate);
+        BigDecimal grandTotal = expenseDAO.getYearWiseExpenseTotal(userId, fromDate, toDate);
 
         req.setAttribute("grandTotal", grandTotal);
 
@@ -153,6 +153,22 @@ public class ExpenseServlet extends HttpServlet{
         req.setAttribute("toYear", toDate.toString());
 
         RequestDispatcher rd = req.getRequestDispatcher("expense-yearwise-result.jsp");
+        rd.forward(req, resp);
+    }
+
+    private void allExpenses(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        HttpSession session = req.getSession(false);
+        int userId = (int) session.getAttribute("userId");
+
+        BigDecimal totalTodayExpense = expenseDAO.todaysExpense(userId);
+        BigDecimal yesterdayExpense = expenseDAO.yesterdayExpense(userId);
+
+        req.setAttribute("totalTodayExpense", totalTodayExpense);
+        req.setAttribute("yesterdayExpense", yesterdayExpense);
+
+        req.setAttribute("allExpenses", true);
+
+        RequestDispatcher rd = req.getRequestDispatcher("dashboard.jsp");
         rd.forward(req, resp);
     }
 }

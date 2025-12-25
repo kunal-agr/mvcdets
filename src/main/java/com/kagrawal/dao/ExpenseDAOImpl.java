@@ -25,7 +25,14 @@ public class ExpenseDAOImpl implements ExpenseDAO {
             "SELECT COALESCE(SUM(amount), 0) " +
                     "FROM tblexpense " +
                     "WHERE user_id = ? AND expense_date BETWEEN ? AND ?";
-
+    private static final String TODAY_EXPENSE = "SELECT COALESCE(SUM(amount), 0) AS todays_expense " +
+            "FROM tblexpense " +
+            "WHERE user_id = ? " +
+            "AND expense_date = CURRENT_DATE";
+    private static final String YESTERDAY_EXPENSE = "SELECT COALESCE(SUM(amount), 0) AS yesterdays_expense " +
+            "FROM tblexpense " +
+            "WHERE user_id = ? " +
+            "AND expense_date = CURRENT_DATE - INTERVAL '1 day'";
     @Override
     public boolean addExpense(Expense e) {
         boolean status = false;
@@ -157,6 +164,48 @@ public class ExpenseDAOImpl implements ExpenseDAO {
             e.printStackTrace();
         }
 
+        return total;
+    }
+
+    @Override
+    public BigDecimal todaysExpense(int userId) {
+        BigDecimal total = BigDecimal.ZERO;
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement stmt = con.prepareStatement(TODAY_EXPENSE)) {
+
+            stmt.setInt(1, userId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    total = rs.getBigDecimal(1);
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return total;
+    }
+
+    @Override
+    public BigDecimal yesterdayExpense(int userId) {
+        BigDecimal total = BigDecimal.ZERO;
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement stmt = con.prepareStatement(YESTERDAY_EXPENSE)) {
+
+            stmt.setInt(1, userId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    total = rs.getBigDecimal(1);
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return total;
     }
 }
