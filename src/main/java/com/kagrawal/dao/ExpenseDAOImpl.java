@@ -21,6 +21,10 @@ public class ExpenseDAOImpl implements ExpenseDAO {
             "SELECT COALESCE(SUM(amount), 0) " +
                     "FROM tblexpense " +
                     "WHERE user_id = ? AND expense_date BETWEEN ? AND ?";
+    private static final String YEAR_WISE =
+            "SELECT COALESCE(SUM(amount), 0) " +
+                    "FROM tblexpense " +
+                    "WHERE user_id = ? AND expense_date BETWEEN ? AND ?";
 
     @Override
     public boolean addExpense(Expense e) {
@@ -114,6 +118,30 @@ public class ExpenseDAOImpl implements ExpenseDAO {
 
         try (Connection con = DBConnection.getConnection();
              PreparedStatement stmt = con.prepareStatement(MONTH_WISE)) {
+
+            stmt.setInt(1, userId);
+            stmt.setDate(2, Date.valueOf(fdate));
+            stmt.setDate(3, Date.valueOf(tdate));
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    total = rs.getBigDecimal(1);
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return total;
+    }
+
+    @Override
+    public BigDecimal getYearWiseExpenseTotal(int userId, LocalDate fdate, LocalDate tdate) {
+        BigDecimal total = BigDecimal.ZERO;
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement stmt = con.prepareStatement(YEAR_WISE)) {
 
             stmt.setInt(1, userId);
             stmt.setDate(2, Date.valueOf(fdate));
