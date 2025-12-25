@@ -1,6 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" import="java.math.BigDecimal" %>
 <%
-    // Keeping your logic exactly as it was in the "new" file
     Integer userId = null;
     String username = "User";
 

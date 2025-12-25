@@ -8,5 +8,6 @@ public interface UserDAO {
     User getUserById(int userId);
     boolean addUser(User user);
     User validateUserForResetPassword(String email, Long mobile);
+    boolean validateUserByIdAndPassword(int userId, String password);
     boolean updatePassword(int userId, String newPassword);
 }

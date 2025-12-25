@@ -37,7 +37,9 @@ public class UserServlet extends HttpServlet {
                 resetPassword(req,resp);
             } else if("reset".equals(action)) {
                 updatePassword(req,resp);
-            }else {
+            } else if("changePass".equals(action)) {
+                changePassword(req,resp);
+            } else {
                 resp.sendRedirect("index.jsp");
             }
         } catch (Exception e) {
@@ -133,4 +135,36 @@ public class UserServlet extends HttpServlet {
             resp.sendRedirect("index.jsp?error=3");
         }
     }
+
+    private void changePassword(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
+
+        HttpSession session = req.getSession(false);
+        if (session == null || session.getAttribute("userId") == null) {
+            resp.sendRedirect("logout.jsp");
+            return;
+        }
+
+        int userId = (int) session.getAttribute("userId");
+
+        String currentPassword = req.getParameter("currentpassword");
+        String newPassword = req.getParameter("newpassword");
+
+        boolean valid = userDAO.validateUserByIdAndPassword(userId, currentPassword);
+
+        if (!valid) {
+            resp.sendRedirect("change-password.jsp?changed=0");
+            return;
+        }
+
+        boolean result = userDAO.updatePassword(userId, newPassword);
+
+        if (result) {
+            resp.sendRedirect("change-password.jsp?changed=1");
+        } else {
+            resp.sendRedirect("change-password.jsp?changed=0");
+        }
+    }
+
+
 }

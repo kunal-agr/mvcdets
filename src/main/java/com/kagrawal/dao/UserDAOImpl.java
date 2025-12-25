@@ -28,6 +28,9 @@ public class UserDAOImpl implements UserDAO {
     private static final String UPDATE_PASS =
             "UPDATE tbluser SET password = ? WHERE user_id = ?";
 
+    private static final String VALIDATE_BY_ID_PASS =
+            "SELECT 1 FROM tbluser WHERE user_id = ? AND password = ?";
+
     @Override
     public User validateUser(String email, String password) {
         try (Connection conn = DBConnection.getConnection();
@@ -141,6 +144,23 @@ public class UserDAOImpl implements UserDAO {
             e.printStackTrace();
         }
         return null;
+    }
+
+    @Override
+    public boolean validateUserByIdAndPassword(int userId, String password) {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(VALIDATE_BY_ID_PASS)) {
+
+            stmt.setInt(1, userId);
+            stmt.setString(2, password);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     @Override
