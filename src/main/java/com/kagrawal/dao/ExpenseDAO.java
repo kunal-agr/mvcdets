@@ -11,4 +11,5 @@ public interface ExpenseDAO {
     List<Expense> getExpensesByUser(int userId);
     void deleteExpense(int expenseId);
     BigDecimal getDayWiseExpenseTotal(int userId, LocalDate fdate, LocalDate tdate);
+    BigDecimal getMonthWiseExpenseTotal(int userId, LocalDate fdate, LocalDate tdate);
 }

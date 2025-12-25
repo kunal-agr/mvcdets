@@ -41,6 +41,8 @@ public class ExpenseServlet extends HttpServlet{
                 break;
             case "dateexpense":dateWiseExpense(req,resp);
                 break;
+            case "monthexpense":monthWiseExpense(req,resp);
+                break;
             default: getProfileUserId(req,resp);
         }
     }
@@ -109,6 +111,27 @@ public class ExpenseServlet extends HttpServlet{
         req.setAttribute("toDate", toDate);
 
         RequestDispatcher rd = req.getRequestDispatcher("expense-datewise-result.jsp");
+        rd.forward(req, resp);
+    }
+
+    private void monthWiseExpense(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+
+        HttpSession session = req.getSession(false);
+        int userId = (int) session.getAttribute("userId");
+
+        LocalDate fromDate = LocalDate.parse(req.getParameter("fromdate"));
+        LocalDate toDate   = LocalDate.parse(req.getParameter("todate"));
+
+        BigDecimal grandTotal =
+                expenseDAO.getMonthWiseExpenseTotal(userId, fromDate, toDate);
+
+        req.setAttribute("grandTotal", grandTotal);
+
+        req.setAttribute("fromMonth", fromDate.toString());
+        req.setAttribute("toMonth", toDate.toString());
+
+        RequestDispatcher rd = req.getRequestDispatcher("expense-monthwise-result.jsp");
         rd.forward(req, resp);
     }
 }
