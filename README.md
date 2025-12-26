@@ -127,9 +127,10 @@ CREATE TABLE expenses (
     category VARCHAR(50),
     expense_date DATE NOT NULL
 );
+```
 ---
-
 ## Project Structure 📂
+```
 mvcdets
 │
 ├── src
