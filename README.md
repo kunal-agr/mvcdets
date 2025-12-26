@@ -111,7 +111,6 @@ CREATE TABLE expenses (
     expense_date DATE NOT NULL
 );
 ---
-```
 ## Project Structure 📂
 mvcdets
 │
@@ -160,6 +159,7 @@ mvcdets
 │               └── fonts
 │
 └── README.md
+```
 
 ---
 
