@@ -31,22 +31,22 @@ public class UserServlet extends HttpServlet {
         String action = req.getParameter("action");
 
         try {
-            if ("login".equals(action)) {
-                loginUser(req, resp);
-            } else if ("register".equals(action)) {
-                registerUser(req, resp);
-            } else if ("forgot".equals(action)) {
-                resetPassword(req,resp);
-            } else if("reset".equals(action)) {
-                updatePassword(req,resp);
-            } else if("changePass".equals(action)) {
-                changePassword(req,resp);
-            } else if("profile".equals(action)) {
-              userProfile(req,resp);
-            } else if ("updateProfile".equals(action)) {
-                updateProfile(req,resp);
-            } else {
-                resp.sendRedirect("index.jsp");
+            switch(action) {
+                case "login" : loginUser(req, resp);
+                    break;
+                case "register" : registerUser(req, resp);
+                    break;
+                case "forgot" : resetPassword(req,resp);;
+                    break;
+                case "reset" : updatePassword(req, resp);
+                    break;
+                case "changePass" : changePassword(req, resp);
+                    break;
+                case "profile" : userProfile(req, resp);
+                    break;
+                case "updateProfile" : updateProfile(req, resp);
+                    break;
+                default: resp.sendRedirect("index.jsp");
             }
         } catch (Exception e) {
             req.setAttribute("errorMessage", e.getMessage());

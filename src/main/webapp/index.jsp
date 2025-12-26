@@ -38,7 +38,7 @@
                         } if("2".equals(error)) {
                     %>
                         <div class="alert alert-danger text-center">
-                            Invalid email or password
+                            Invalid email or mobile
                         </div>
                     <%
                         } if ("3".equals(error)) {
