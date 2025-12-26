@@ -23,22 +23,28 @@
     }
 
     BigDecimal todaysExpense = (BigDecimal) request.getAttribute("totalTodayExpense");
-    if (todaysExpense == null) todaysExpense = BigDecimal.ZERO;
+    if (todaysExpense == null)
+        todaysExpense = BigDecimal.ZERO;
 
     BigDecimal yesterdayExpense = (BigDecimal) request.getAttribute("yesterdayExpense");
-    if (yesterdayExpense == null) yesterdayExpense = BigDecimal.ZERO;
+    if (yesterdayExpense == null)
+        yesterdayExpense = BigDecimal.ZERO;
 
     BigDecimal weekExpense = (BigDecimal) request.getAttribute("weekExpense");
-    if (weekExpense == null) weekExpense = BigDecimal.ZERO;
+    if (weekExpense == null)
+        weekExpense = BigDecimal.ZERO;
 
     BigDecimal monthExpense = (BigDecimal) request.getAttribute("monthExpense");
-    if (monthExpense == null) monthExpense = BigDecimal.ZERO;
+    if (monthExpense == null)
+        monthExpense = BigDecimal.ZERO;
 
     BigDecimal yearExpense = (BigDecimal) request.getAttribute("yearExpense");
-    if (yearExpense == null) yearExpense = BigDecimal.ZERO;
+    if (yearExpense == null)
+        yearExpense = BigDecimal.ZERO;
 
     BigDecimal totalExpense = (BigDecimal) request.getAttribute("totalExpense");
-    if (totalExpense == null) totalExpense = BigDecimal.ZERO;
+    if (totalExpense == null)
+        totalExpense = BigDecimal.ZERO;
 %>
 
 <!DOCTYPE html>
