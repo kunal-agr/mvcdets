@@ -36,7 +36,7 @@ public class UserServlet extends HttpServlet {
                     break;
                 case "register" : registerUser(req, resp);
                     break;
-                case "forgot" : resetPassword(req,resp);;
+                case "forgot" : resetPassword(req,resp);
                     break;
                 case "reset" : updatePassword(req, resp);
                     break;
