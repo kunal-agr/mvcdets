@@ -13,6 +13,7 @@ public class ExpenseDAOImpl implements ExpenseDAO {
     private static final String INSERT_EXPENSE = "INSERT INTO tblexpense (user_id, expense_date, amount, category, description) VALUES (?, ?, ?, ?, ?)";
     private static final String SELECT_BY_USER = "SELECT * FROM tblexpense WHERE user_id = ? ORDER BY expense_date DESC";
     private static final String DELETE_EXPENSE = "DELETE FROM tblexpense WHERE expense_id = ?";
+
     private static final String DAY_WISE =
             "SELECT COALESCE(SUM(amount), 0) " +
                     "FROM tblexpense " +

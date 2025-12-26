@@ -1,11 +1,6 @@
 package com.kagrawal.dao;
 
 import com.kagrawal.model.User;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
-import java.io.IOException;
-import java.sql.Timestamp;
 
 public interface UserDAO {
 

@@ -10,8 +10,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
-import java.sql.Timestamp;
-import java.time.LocalDate;
 
 @WebServlet("/user")
 public class UserServlet extends HttpServlet {

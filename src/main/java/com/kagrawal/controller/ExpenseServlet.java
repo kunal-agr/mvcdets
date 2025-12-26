@@ -1,10 +1,7 @@
 package com.kagrawal.controller;
 
-import com.kagrawal.dao.ExpenseDAO;
 import com.kagrawal.dao.ExpenseDAOImpl;
-import com.kagrawal.dao.UserDAOImpl;
 import com.kagrawal.model.Expense;
-import com.kagrawal.model.User;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -15,7 +12,6 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.List;
 
