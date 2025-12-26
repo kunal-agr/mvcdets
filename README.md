@@ -185,15 +185,6 @@ Get powerful insights into your spending patterns:
                              │
                              ▼
 ┌──────────────────────────────────────────────────────────────┐
-│                      💼 SERVICE LAYER                         │
-│                      (Business Logic)                         │
-│  • Authentication & Authorization                             │
-│  • Data validation & transformation                           │
-│  • Business rules enforcement                                 │
-└────────────────────────────┬─────────────────────────────────┘
-                             │
-                             ▼
-┌──────────────────────────────────────────────────────────────┐
 │                       🗄️ DAO LAYER                           │
 │         (UserDAOImpl / ExpenseDAOImpl + JDBC)                 │
 │  • Database connection management                             │
