@@ -270,7 +270,7 @@ CREATE DATABASE mvcdetsdb;
 5. Run the project
 
 ```
-http://localhost:8080/MVC_DETS/login.jsp
+http://localhost:8080/MVC_DETS/index.jsp
 ```
 
 ---
