@@ -43,6 +43,8 @@ public class UserServlet extends HttpServlet {
                 changePassword(req,resp);
             } else if("profile".equals(action)) {
               userProfile(req,resp);
+            } else if ("updateProfile".equals(action)) {
+                updateProfile(req,resp);
             } else {
                 resp.sendRedirect("index.jsp");
             }
@@ -168,13 +170,31 @@ public class UserServlet extends HttpServlet {
 
     private void userProfile(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-
         HttpSession session = req.getSession(false);
         int userId = (int) session.getAttribute("userId");
 
         User user = userDAO.getUserById(userId);
 
         req.setAttribute("user", user);
+        req.getRequestDispatcher("user-profile.jsp").forward(req, resp);
+    }
+
+    private void updateProfile(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
+        HttpSession session = req.getSession(false);
+        int userId = (int) session.getAttribute("userId");
+
+        String name = req.getParameter("fullname");
+        String mobile = req.getParameter("contactnumber");
+
+        User updatedUser = userDAO.updateProfile(userId, name, mobile);
+
+        if (updatedUser != null) {
+            req.setAttribute("msg", "Profile updated successfully");
+            req.setAttribute("user", updatedUser);
+        } else {
+            req.setAttribute("msg", "Profile update failed");
+        }
+
         req.getRequestDispatcher("user-profile.jsp").forward(req, resp);
     }
 }

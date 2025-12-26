@@ -24,9 +24,10 @@
              .forward(request, response);
       return;
     }
-
-    User user = (User) request.getAttribute("user");
     String msg = (String) request.getAttribute("msg");
+    if (msg == null)
+        msg = "";
+    User user = (User) request.getAttribute("user");
 %>
 
 
@@ -112,8 +113,8 @@
         <div class="panel panel-default">
             <div class="panel-heading">Profile</div>
             <div class="panel-body">
-                <p style="font-size:16px; color:red" align="center"><%= msg %></p>
-                <form role="form" method="post">
+                <p style="font-size:16px; color:red" align="center"> <%= msg %> </p>
+                <form role="form" method="post" action="user?action=updateProfile">
                     <div class="form-group">
                         <label>Full Name</label>
                         <input class="form-control" type="text" name="fullname" value="<%= user.getName() %>" required>

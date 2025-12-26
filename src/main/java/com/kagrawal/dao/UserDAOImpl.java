@@ -2,6 +2,8 @@ package com.kagrawal.dao;
 
 import com.kagrawal.model.User;
 import com.kagrawal.util.DBConnection;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.sql.*;
 
@@ -26,6 +28,9 @@ public class UserDAOImpl implements UserDAO {
 
     private static final String VALIDATE_BY_ID_PASS =
             "SELECT 1 FROM tbluser WHERE user_id = ? AND password = ?";
+
+    private static final String UPDATE_PROFILE =
+            "UPDATE tbluser SET name = ?, mobile = ? WHERE user_id = ?";
 
     @Override
     public User validateUser(String email, String password) {
@@ -58,9 +63,6 @@ public class UserDAOImpl implements UserDAO {
 
     @Override
     public User getUserById(int userId) {
-
-        User user = null;
-
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SELECT_BY_ID)) {
 
@@ -68,17 +70,12 @@ public class UserDAOImpl implements UserDAO {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-
-                    Long mobile = rs.getObject("mobile") != null
-                            ? rs.getLong("mobile")
-                            : null;
-
-                    user = new User(
+                    return new User(
                             rs.getInt("user_id"),
                             rs.getString("name"),
                             rs.getString("email"),
                             null,
-                            mobile,
+                            rs.getObject("mobile") != null ? rs.getLong("mobile") : null,
                             rs.getTimestamp("created_at")
                     );
                 }
@@ -87,7 +84,7 @@ public class UserDAOImpl implements UserDAO {
             e.printStackTrace();
         }
 
-        return user;
+        return null;
     }
 
 
@@ -175,5 +172,31 @@ public class UserDAOImpl implements UserDAO {
             e.printStackTrace();
         }
         return status;
+    }
+
+    @Override
+    public User updateProfile(int userId,String name,String mobile) {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(UPDATE_PROFILE)) {
+
+            stmt.setString(1, name);
+
+            if (mobile != null && !mobile.trim().isEmpty())
+                stmt.setLong(2, Long.parseLong(mobile));
+            else
+                stmt.setNull(2, Types.NUMERIC);
+
+            stmt.setInt(3, userId);
+
+            int updated = stmt.executeUpdate();
+
+            if (updated == 1) {
+                return getUserById(userId);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }
