@@ -17,42 +17,59 @@ This application enables users to manage personal finances efficiently with secu
 
 ## ✨ Features
 
-### Core CRUD Operations
-- Add Expense
+### 🔖 Version: v1.0.0 (Initial Stable Release)
+**MVC DETS** v1.0 marks the first stable release of the Daily Expense Tracking System.
+This version focuses on building a strong MVC foundation, 
+secure authentication, and core expense management features 
+using enterprise-style Java web development practices.
+
+### ✅ v1.0 Features
+### 👤 User Authentication & Security
+- User Registration
+- Secure Login & Logout
+- Session-based Authentication
+- Change Password
+- Forgot Password
+- Reset Password
+- User Profile Management
+
+---
+
+### 💸 Expense Management (CRUD)
+- Add Daily Expenses
 - View Expense List
-- Edit Expense
-- Delete Expense
-
-### Expense Reports & Analytics
-- Dashboard summary (Today, Yesterday, Last 7 Days)
-- Date-wise expense reports
-- Month-wise expense reports
-- Year-wise expense reports
-- Monthly and yearly expense analytics
-
-### Authentication & User Management
-- User registration
-- Secure login & logout
-- Session-based authentication
-- Change password
-- Forgot & reset password
-- User profile management
-
-### Validation
-- Client-side validation using HTML5
-- Server-side validation in Servlets
-
-### UI / UX Enhancements
-- Responsive layout using Bootstrap
-- Clean and consistent action buttons
-- Reusable JSP includes (navbar/layout)
-- User-friendly messages and alerts
-
-### Database & Architecture
-- JDBC-based DAO layer
-- Two-table relational database design
-- Foreign key relationship between `users` and `expenses`
+- Edit Existing Expenses
+- Delete Expenses
 - User-specific expense isolation
+
+### 📊 Dashboard & Reports
+- Today’s Expense Summary
+- Yesterday’s Expense Summary
+- Last 7 Days Expense Summary
+- Date-wise Expense Reports
+- Month-wise Expense Reports
+- Year-wise Expense Reports
+
+### 🧪 Validation & UX
+- Client-side validation (HTML5)
+- Server-side validation (Servlets)
+- Clear success & error messages
+- Consistent UI actions
+
+### 🧱 v1.0 Highlights
+- Enterprise-style Java Web Application
+- Two-table relational database design
+- Secure session handling
+- Scalable project structure
+- Beginner-to-intermediate friendly codebase
+
+### 🔮 Planned for Future Versions
+- Category-wise analytics
+- Charts & graphs (Chart.js)
+- Export reports (PDF / Excel)
+- Admin panel
+- Role-based access control
+- REST API integration
 
 ### Clean MVC Separation
 - **Model** → Data representation
