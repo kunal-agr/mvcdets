@@ -15,7 +15,7 @@
 
     <body>
         <div class="row">
-            <h2 class="text-center">Demo Expense Tracker</h2>
+            <h2 class="text-center">Daily Expense Tracker</h2>
             <hr />
 
             <div class="col-xs-10 col-xs-offset-1
