@@ -32,6 +32,8 @@ public class UserServlet extends HttpServlet {
             switch(action) {
                 case "login" : loginUser(req, resp);
                     break;
+                case "logout" : logoutUser(req,resp);
+                    break;
                 case "register" : registerUser(req, resp);
                     break;
                 case "forgot" : resetPassword(req,resp);
@@ -71,6 +73,17 @@ public class UserServlet extends HttpServlet {
         } else {
             resp.sendRedirect("index.jsp?error=1");
         }
+    }
+
+    private void logoutUser(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+        HttpSession session = req.getSession(false);
+
+        if (session != null) {
+            session.invalidate();
+        }
+
+        resp.sendRedirect("index.jsp");
     }
 
     private void registerUser(HttpServletRequest req, HttpServletResponse resp)
