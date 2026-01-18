@@ -2,14 +2,18 @@ package com.kagrawal.dao;
 
 import com.kagrawal.model.User;
 import com.kagrawal.util.DBConnection;
+import com.kagrawal.util.MongoDBConnection;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import org.bson.Document;
 
 import java.sql.*;
 
-public class UserDAOImpl implements UserDAO {
+import static com.mongodb.client.model.Filters.and;
+import static com.mongodb.client.model.Filters.eq;
 
-    private static final String VALIDATE_USER =
-            "SELECT user_id, name, email, password, mobile " +
-                    "FROM tbluser WHERE email = ? AND password = ?";
+public class UserDAOImpl implements UserDAO {
+    private MongoCollection<Document> usersCollection;
 
     private static final String SELECT_BY_ID =
             "SELECT user_id, name, email, mobile, created_at " +
@@ -30,30 +34,30 @@ public class UserDAOImpl implements UserDAO {
     private static final String UPDATE_PROFILE =
             "UPDATE tbluser SET name = ?, mobile = ? WHERE user_id = ?";
 
+    public UserDAOImpl() {
+        MongoDatabase db = MongoDBConnection.getDatabase();
+        usersCollection = db.getCollection("users");
+    }
+
     @Override
     public User validateUser(String email, String password) {
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(VALIDATE_USER)) {
+        try {
+                Document userDoc = usersCollection.find(
+                        and(eq("email", email), eq("password", password))
+                ).first();
+            if (userDoc != null) {
+                Long mobile = userDoc.getLong("mobile");
 
-            stmt.setString(1, email);
-            stmt.setString(2, password);
-
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-
-                    Long mobile = rs.getObject("mobile") != null ? rs.getLong("mobile") : null;
-
-                    return new User(
-                            rs.getInt("user_id"),
-                            rs.getString("name"),
-                            rs.getString("email"),
-                            rs.getString("password"),
-                            mobile,
-                            null
-                    );
-                }
+                return new User(
+                        userDoc.getInteger("user_id"),
+                        userDoc.getString("name"),
+                        userDoc.getString("email"),
+                        userDoc.getString("password"),
+                        mobile,
+                        null
+                );
             }
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
