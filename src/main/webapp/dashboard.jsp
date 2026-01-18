@@ -13,7 +13,7 @@
     }
 
     if (userId == null) {
-        response.sendRedirect("logout.jsp");
+        response.sendRedirect("user?action=logout");
         return;
     }
     if (request.getAttribute("allExpenses") == null) {

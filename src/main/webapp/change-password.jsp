@@ -13,7 +13,7 @@
         }
 
         if (userId == null) {
-            response.sendRedirect("logout.jsp");
+            response.sendRedirect("user?action=logout");
             return;
         }
 
@@ -103,7 +103,7 @@
                 </li>
                 <li><a href="user-profile.jsp"><em class="fa fa-user">&nbsp;</em> Profile</a></li>
                 <li><a href="change-password.jsp"><em class="fa fa-clone">&nbsp;</em> Change Password</a></li>
-                <li><a href="logout.jsp"><em class="fa fa-power-off">&nbsp;</em> Logout</a></li>
+                <li><a href="user?action=logout"><em class="fa fa-power-off">&nbsp;</em> Logout</a></li>
             </ul>
         </div>
 
