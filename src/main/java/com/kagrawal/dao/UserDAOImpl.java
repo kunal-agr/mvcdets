@@ -13,14 +13,12 @@ import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
 
 public class UserDAOImpl implements UserDAO {
-    private MongoCollection<Document> usersCollection;
+    private MongoCollection<Document> userCollection;
 
     private static final String SELECT_BY_ID =
             "SELECT user_id, name, email, mobile, created_at " +
                     "FROM tbluser WHERE user_id = ?";
 
-    private static final String INSERT_USER =
-            "INSERT INTO tbluser (name, email, mobile, password) VALUES (?, ?, ?, ?)";
 
     private static final String VALIDATE_FOR_RESET =
             "SELECT user_id, name, email, mobile FROM tbluser WHERE email = ? AND mobile = ?";
@@ -36,13 +34,13 @@ public class UserDAOImpl implements UserDAO {
 
     public UserDAOImpl() {
         MongoDatabase db = MongoDBConnection.getDatabase();
-        usersCollection = db.getCollection("users");
+        userCollection = db.getCollection("users");
     }
 
     @Override
     public User validateUser(String email, String password) {
         try {
-                Document userDoc = usersCollection.find(
+                Document userDoc = userCollection.find(
                         and(eq("email", email), eq("password", password))
                 ).first();
             if (userDoc != null) {
@@ -92,22 +90,26 @@ public class UserDAOImpl implements UserDAO {
 
     @Override
     public boolean addUser(User user) {
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(INSERT_USER)) {
+        try {
+            // Find max user_id to generate next one since MongoDB doesn't auto-increment
+            Document lastUser = userCollection.find()
+                    .sort(new Document("user_id", -1))
+                    .first();
+            int nextId = 1;
+            if (lastUser != null) {
+                nextId = lastUser.getInteger("user_id") + 1;
+            }
 
-            stmt.setString(1, user.getName());
-            stmt.setString(2, user.getEmail());
-
-            if (user.getMobile() != null)
-                stmt.setLong(3, user.getMobile());
-            else
-                stmt.setNull(3, Types.NUMERIC);
-
-            stmt.setString(4, user.getPassword());
-
-            return stmt.executeUpdate() == 1;
-
-        } catch (SQLException e) {
+            Document newUser = new Document()
+                    .append("user_id", nextId)
+                    .append("name", user.getName().trim())
+                    .append("email", user.getEmail().trim())
+                    .append("password", user.getPassword().trim())
+                    .append("mobile", user.getMobile())
+                    .append("created_at", java.time.LocalDateTime.now().toString());
+            userCollection.insertOne(newUser);
+            return true;
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return false;
