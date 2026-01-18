@@ -377,7 +377,6 @@ mvcdets/
 │       ├── 🔑 change-password.jsp            # Password change
 │       ├── ❓ forgot-password.jsp            # Password recovery
 │       ├── 🔄 reset-password.jsp             # Password reset
-│       ├── 🚪 logout.jsp                     # Logout handler
 │       │
 │       └── 📁 assets/
 │           ├── 🎨 css/                       # Custom stylesheets
