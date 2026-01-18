@@ -19,9 +19,6 @@ public class UserDAOImpl implements UserDAO {
             "SELECT user_id, name, email, mobile, created_at " +
                     "FROM tbluser WHERE user_id = ?";
 
-    private static final String UPDATE_PASS =
-            "UPDATE tbluser SET password = ? WHERE user_id = ?";
-
     private static final String VALIDATE_BY_ID_PASS =
             "SELECT 1 FROM tbluser WHERE user_id = ? AND password = ?";
 
@@ -173,17 +170,16 @@ public class UserDAOImpl implements UserDAO {
 
     @Override
     public boolean updatePassword(int userId, String newPassword) {
-        boolean status = false;
-        try(Connection conn = DBConnection.getConnection();
-            PreparedStatement stmt = conn.prepareStatement(UPDATE_PASS)) {
-            stmt.setString(1, newPassword);
-            stmt.setInt(2,userId);
-
-            status = stmt.executeUpdate() == 1;
-        } catch (SQLException e) {
+        try {
+            Document result = userCollection.findOneAndUpdate(
+                    eq("user_id",userId),
+                    new Document("$set", new Document("password", newPassword.trim()))
+            );
+            return result != null;
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        return status;
+        return false;
     }
 
     @Override
