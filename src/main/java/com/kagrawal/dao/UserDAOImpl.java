@@ -19,10 +19,6 @@ public class UserDAOImpl implements UserDAO {
             "SELECT user_id, name, email, mobile, created_at " +
                     "FROM tbluser WHERE user_id = ?";
 
-
-    private static final String VALIDATE_FOR_RESET =
-            "SELECT user_id, name, email, mobile FROM tbluser WHERE email = ? AND mobile = ?";
-
     private static final String UPDATE_PASS =
             "UPDATE tbluser SET password = ? WHERE user_id = ?";
 
@@ -117,32 +113,44 @@ public class UserDAOImpl implements UserDAO {
 
     @Override
     public User validateUserForResetPassword(String email, Long mobile) {
+        try {
+            Document userDoc;
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(VALIDATE_FOR_RESET)) {
-
-            stmt.setString(1, email);
-
-            if (mobile != null)
-                stmt.setLong(2, mobile);
-            else
-                stmt.setNull(2, Types.NUMERIC);
-
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return new User(
-                            rs.getInt("user_id"),
-                            rs.getString("name"),
-                            rs.getString("email"),
-                            null,
-                            rs.getLong("mobile"),
-                            null
-                    );
-                }
+            if (mobile != null) {
+                userDoc = userCollection.find(
+                        and(eq("email", email), eq("mobile", mobile))
+                ).first();
+            } else {
+                userDoc = userCollection.find(eq("email", email)).first();
             }
-        } catch (SQLException e) {
+
+            if (userDoc != null) {
+
+                Object mobileObj = userDoc.get("mobile");
+                Long userMobile = null;
+
+                if (mobileObj != null) {
+                    if (mobileObj instanceof Number) {
+                        userMobile = ((Number) mobileObj).longValue();
+                    } else {
+                        userMobile = Long.parseLong(mobileObj.toString());
+                    }
+                }
+
+                return new User(
+                        userDoc.getInteger("user_id"),
+                        userDoc.getString("name"),
+                        userDoc.getString("email"),
+                        null,
+                        userMobile,
+                        null
+                );
+            }
+
+        } catch (Exception e) {
             e.printStackTrace();
         }
+
         return null;
     }
 
