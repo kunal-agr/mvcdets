@@ -22,7 +22,6 @@ public class MongoDBConnection {
 
             MongoClient client = MongoClients.create(uri.trim());
             database = client.getDatabase(dbName.trim());
-            System.out.println("✅ MongoDB connection initialized successfully for database: " + dbName);
 
         } catch (Exception e) {
             System.err.println("❌ MongoDB Connection Error: " + e.getMessage());

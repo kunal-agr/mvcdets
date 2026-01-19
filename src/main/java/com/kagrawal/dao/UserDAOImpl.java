@@ -21,12 +21,15 @@ public class UserDAOImpl implements UserDAO {
         this.userCollection = db.getCollection("users");
     }
 
-    // Helper to safely read mobile number as Long
+    // Helper to read mobile number as Long
     private Long getMobile(Document doc) {
         Object mobileObj = doc.get("mobile");
-        if (mobileObj == null) return null;
-        if (mobileObj instanceof Integer) return ((Integer) mobileObj).longValue();
-        if (mobileObj instanceof Long) return (Long) mobileObj;
+        if (mobileObj == null)
+            return null;
+        if (mobileObj instanceof Integer)
+            return ((Integer) mobileObj).longValue();
+        if (mobileObj instanceof Long)
+            return (Long) mobileObj;
         return null;
     }
 
