@@ -5,30 +5,22 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 
 public class MongoDBConnection {
-
-    private static MongoClient mongoClient;
     private static MongoDatabase database;
 
     static {
         try {
-            String host = System.getenv().getOrDefault("MONGO_HOST", "localhost");
-            String port = System.getenv().getOrDefault("MONGO_PORT", "27017");
-            String db   = System.getenv().getOrDefault("MONGO_DB", "mvcdetsdb");
+            // Read from environment variable (recommended)
+            String uri = System.getenv("MONGO_URI");
 
-            String uri = "mongodb://" + host + ":" + port;
+            if (uri == null || uri.isEmpty()) {
+                uri = "mongodb+srv://kagrawal_db_user:password@cluster0.ycpcbdo.mongodb.net/?appName=Cluster0";
+            }
 
-            mongoClient = MongoClients.create(uri);
-            database = mongoClient.getDatabase(db);
-
-            System.out.println("MongoDB connected to: " + uri + "/" + db);
-
+            MongoClient client = MongoClients.create(uri);
+            database = client.getDatabase(""); // <-- replace with your DB name
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    private MongoDBConnection() {
-        // prevent instantiation
     }
 
     public static MongoDatabase getDatabase() {

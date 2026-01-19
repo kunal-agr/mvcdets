@@ -1,8 +1,7 @@
 package com.kagrawal.dao;
 
 import com.kagrawal.model.User;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
+import com.kagrawal.util.MongoDBConnection;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
@@ -15,9 +14,11 @@ public class UserDAOImpl implements UserDAO {
     private MongoCollection<Document> userCollection;
 
     public UserDAOImpl() {
-        MongoClient client = MongoClients.create("mongodb://localhost:27017");
-        MongoDatabase db = client.getDatabase("mvcdetsdb"); // Correct DB
-        userCollection = db.getCollection("users");
+        MongoDatabase db = MongoDBConnection.getDatabase();
+        if (db == null) {
+            throw new RuntimeException("❌ MongoDB database is NULL");
+        }
+        this.userCollection = db.getCollection("users");
     }
 
     // Helper to safely read mobile number as Long
@@ -33,7 +34,7 @@ public class UserDAOImpl implements UserDAO {
     public User validateUser(String email, String password) {
         try {
             Document userDoc = userCollection.find(
-                    and(eq("email", email.trim()), eq("password", password.trim()))
+                    and(eq("email", email.trim()), eq("password", password))
             ).first();
 
             if (userDoc != null) {
@@ -132,7 +133,7 @@ public class UserDAOImpl implements UserDAO {
     public boolean validateUserByIdAndPassword(int userId, String password) {
         try {
             Document user = userCollection.find(
-                    and(eq("user_id", userId), eq("password", password.trim()))
+                    and(eq("user_id", userId), eq("password", password))
             ).first();
             return user != null;
         } catch (Exception e) {
@@ -146,7 +147,7 @@ public class UserDAOImpl implements UserDAO {
         try {
             Document result = userCollection.findOneAndUpdate(
                     eq("user_id", userId),
-                    new Document("$set", new Document("password", newPassword.trim()))
+                    new Document("$set", new Document("password", newPassword))
             );
             return result != null;
         } catch (Exception e) {
