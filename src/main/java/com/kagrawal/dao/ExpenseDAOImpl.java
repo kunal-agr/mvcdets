@@ -20,12 +20,9 @@ public class ExpenseDAOImpl implements ExpenseDAO {
     private MongoCollection<Document> expenseCollection;
 
     public ExpenseDAOImpl() {
-        // ✅ USE THE CONFIGURED MONGODB CONNECTION INSTEAD OF HARDCODED LOCALHOST
         MongoDatabase db = MongoDBConnection.getDatabase();
         expenseCollection = db.getCollection("expenses");
     }
-
-    /* ---------------- ADD EXPENSE ---------------- */
 
     @Override
     public boolean addExpense(Expense e) {
@@ -63,8 +60,6 @@ public class ExpenseDAOImpl implements ExpenseDAO {
         }
     }
 
-    /* ---------------- LIST EXPENSES ---------------- */
-
     @Override
     public List<Expense> getExpensesByUser(int userId) {
         List<Expense> list = new ArrayList<>();
@@ -97,8 +92,6 @@ public class ExpenseDAOImpl implements ExpenseDAO {
         return list;
     }
 
-    /* ---------------- DELETE EXPENSE ---------------- */
-
     @Override
     public void deleteExpense(int expenseId) {
         expenseCollection.deleteOne(eq("expense_id", expenseId));
@@ -108,8 +101,10 @@ public class ExpenseDAOImpl implements ExpenseDAO {
         BigDecimal total = BigDecimal.ZERO;
 
         try {
-            Date start = Date.from(from.atStartOfDay(ZoneId.systemDefault()).toInstant());
-            Date end = Date.from(to.atStartOfDay(ZoneId.systemDefault()).toInstant());
+            Date start = Date.from(
+                    from.atStartOfDay(ZoneId.systemDefault()).toInstant());
+            Date end = Date.from(
+                    to.atStartOfDay(ZoneId.systemDefault()).toInstant());
 
             Document result = expenseCollection.aggregate(
                     Arrays.asList(
@@ -153,14 +148,10 @@ public class ExpenseDAOImpl implements ExpenseDAO {
         return getExpenseBetweenDates(userId, fdate, tdate);
     }
 
-    /* ---------------- TODAY EXPENSE ---------------- */
-
     @Override
     public BigDecimal todaysExpense(int userId) {
         return dateRangeSum(userId, LocalDate.now(), LocalDate.now().plusDays(1));
     }
-
-    /* ---------------- YESTERDAY EXPENSE ---------------- */
 
     @Override
     public BigDecimal yesterdayExpense(int userId) {
@@ -168,15 +159,11 @@ public class ExpenseDAOImpl implements ExpenseDAO {
         return dateRangeSum(userId, yesterday, yesterday.plusDays(1));
     }
 
-    /* ---------------- WEEK EXPENSE ---------------- */
-
     @Override
     public BigDecimal weekExpense(int userId) {
         LocalDate today = LocalDate.now();
         return dateRangeSum(userId, today.minusDays(7), today);
     }
-
-    /* ---------------- MONTH EXPENSE ---------------- */
 
     @Override
     public BigDecimal monthExpense(int userId) {
@@ -187,8 +174,6 @@ public class ExpenseDAOImpl implements ExpenseDAO {
                 now.plusMonths(1).withDayOfMonth(1)
         );
     }
-
-    /* ---------------- YEAR EXPENSE ---------------- */
 
     @Override
     public BigDecimal yearExpense(int userId) {
@@ -221,8 +206,6 @@ public class ExpenseDAOImpl implements ExpenseDAO {
         return total;
     }
 
-    /* ---------------- TOTAL EXPENSE ---------------- */
-
     @Override
     public BigDecimal totalExpense(int userId) {
         BigDecimal total = BigDecimal.ZERO;
@@ -247,8 +230,6 @@ public class ExpenseDAOImpl implements ExpenseDAO {
 
         return total;
     }
-
-    /* ---------------- SHARED DATE RANGE METHOD ---------------- */
 
     private BigDecimal dateRangeSum(int userId, LocalDate from, LocalDate to) {
         BigDecimal total = BigDecimal.ZERO;
