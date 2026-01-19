@@ -1,6 +1,7 @@
 package com.kagrawal.dao;
 
 import com.kagrawal.model.Expense;
+import com.kagrawal.util.MongoDBConnection;
 import com.mongodb.client.*;
 import org.bson.Document;
 
@@ -19,8 +20,8 @@ public class ExpenseDAOImpl implements ExpenseDAO {
     private MongoCollection<Document> expenseCollection;
 
     public ExpenseDAOImpl() {
-        MongoClient client = MongoClients.create("mongodb://localhost:27017");
-        MongoDatabase db = client.getDatabase("mvcdetsdb");
+        // ✅ USE THE CONFIGURED MONGODB CONNECTION INSTEAD OF HARDCODED LOCALHOST
+        MongoDatabase db = MongoDBConnection.getDatabase();
         expenseCollection = db.getCollection("expenses");
     }
 
