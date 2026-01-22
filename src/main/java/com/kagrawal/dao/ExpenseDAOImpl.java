@@ -1,60 +1,37 @@
 package com.kagrawal.dao;
 
+import com.google.cloud.firestore.*;
 import com.kagrawal.model.Expense;
-import com.kagrawal.util.MongoDBConnection;
-import com.mongodb.client.*;
-import org.bson.Document;
+import com.kagrawal.util.FirebaseUtil;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
-
-import static com.mongodb.client.model.Filters.*;
+import java.util.concurrent.ExecutionException;
 
 public class ExpenseDAOImpl implements ExpenseDAO {
 
-    private MongoCollection<Document> expenseCollection;
+    private final Firestore db;
 
     public ExpenseDAOImpl() {
-        MongoDatabase db = MongoDBConnection.getDatabase();
-        expenseCollection = db.getCollection("expenses");
+        this.db = FirebaseUtil.getFirestore();
     }
 
     @Override
     public boolean addExpense(Expense e) {
         try {
-            Document lastExpense = expenseCollection.find()
-                    .sort(new Document("expense_id", -1))
-                    .first();
+            String docId = String.valueOf(System.currentTimeMillis() / 1000); // unique doc id
+            e.setExpenseId(Integer.parseInt(docId)); // optional, for local reference
 
-            int nextId = 1;
-            if (lastExpense != null) {
-                nextId = lastExpense.getInteger("expense_id") + 1;
-            }
+            // Firestore document map
+            db.collection("expenses")
+                    .document(docId)
+                    .set(new ExpenseFirestore(e))
+                    .get();
 
-            Document doc = new Document()
-                    .append("expense_id", nextId)
-                    .append("user_id", e.getUserId())
-                    .append("amount", e.getAmount())
-                    .append("category", e.getCategory())
-                    .append("description", e.getDescription())
-                    .append("createdAt", new Date())
-                    .append("expenseDate",
-                            Date.from(
-                                    e.getExpenseDate()
-                                            .atStartOfDay(ZoneId.systemDefault())
-                                            .toInstant()
-                            )
-                    );
-
-            expenseCollection.insertOne(doc);
             return true;
-
-        } catch (Exception ex) {
+        } catch (InterruptedException | ExecutionException ex) {
             ex.printStackTrace();
             return false;
         }
@@ -63,204 +40,135 @@ public class ExpenseDAOImpl implements ExpenseDAO {
     @Override
     public List<Expense> getExpensesByUser(int userId) {
         List<Expense> list = new ArrayList<>();
-
         try {
-            List<Document> docs = expenseCollection.find(eq("user_id", userId))
-                    .sort(new Document("expenseDate", -1))
-                    .into(new ArrayList<>());
+            QuerySnapshot snapshot = db.collection("expenses")
+                    .whereEqualTo("userId", String.valueOf(userId))
+                    .get()
+                    .get();
 
-            for (Document d : docs) {
-                Expense e = new Expense();
-                e.setExpenseId(d.getInteger("expense_id"));
-                e.setUserId(d.getInteger("user_id"));
-                e.setAmount(BigDecimal.valueOf(((Number) d.get("amount")).doubleValue()));
-                e.setCategory(d.getString("category"));
-                e.setDescription(d.getString("description"));
-
-                Date date = d.getDate("expenseDate");
-                e.setExpenseDate(
-                        date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
-                );
-
-                list.add(e);
+            for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                list.add(doc.toObject(ExpenseFirestore.class).toExpense());
             }
-
-        } catch (Exception ex) {
+        } catch (InterruptedException | ExecutionException ex) {
             ex.printStackTrace();
         }
-
         return list;
     }
 
     @Override
     public void deleteExpense(int expenseId) {
-        expenseCollection.deleteOne(eq("expense_id", expenseId));
+        try {
+            db.collection("expenses")
+                    .document(String.valueOf(expenseId))
+                    .delete()
+                    .get();
+        } catch (InterruptedException | ExecutionException ex) {
+            ex.printStackTrace();
+        }
     }
 
-    private BigDecimal getExpenseBetweenDates(int userId, LocalDate from, LocalDate to) {
+    private BigDecimal getExpenseTotalByUserAndDate(int userId, LocalDate from, LocalDate to) {
         BigDecimal total = BigDecimal.ZERO;
-
         try {
-            Date start = Date.from(
-                    from.atStartOfDay(ZoneId.systemDefault()).toInstant());
-            Date end = Date.from(
-                    to.atStartOfDay(ZoneId.systemDefault()).toInstant());
+            QuerySnapshot snapshot = db.collection("expenses")
+                    .whereEqualTo("userId", String.valueOf(userId))
+                    .get()
+                    .get();
 
-            Document result = expenseCollection.aggregate(
-                    Arrays.asList(
-                            new Document("$match",
-                                    and(
-                                            eq("user_id", userId),
-                                            gte("expenseDate", start),
-                                            lt("expenseDate", end)
-                                    )
-                            ),
-                            new Document("$group",
-                                    new Document("_id", null)
-                                            .append("total", new Document("$sum", "$amount")))
-                    )
-            ).first();
-
-            if (result != null && result.get("total") != null) {
-                total = BigDecimal.valueOf(((Number) result.get("total")).doubleValue());
+            for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                Expense e = doc.toObject(ExpenseFirestore.class).toExpense();
+                if ((e.getExpenseDate().isEqual(from) || e.getExpenseDate().isAfter(from)) &&
+                        e.getExpenseDate().isBefore(to.plusDays(1))) {
+                    total = total.add(e.getAmount());
+                }
             }
-
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (InterruptedException | ExecutionException ex) {
+            ex.printStackTrace();
         }
-
         return total;
     }
 
-
     @Override
     public BigDecimal getDayWiseExpenseTotal(int userId, LocalDate fdate, LocalDate tdate) {
-        return getExpenseBetweenDates(userId, fdate, tdate);
+        return getExpenseTotalByUserAndDate(userId, fdate, tdate);
     }
 
     @Override
     public BigDecimal getMonthWiseExpenseTotal(int userId, LocalDate fdate, LocalDate tdate) {
-        return getExpenseBetweenDates(userId, fdate, tdate);
+        return getExpenseTotalByUserAndDate(userId, fdate, tdate);
     }
 
     @Override
     public BigDecimal getYearWiseExpenseTotal(int userId, LocalDate fdate, LocalDate tdate) {
-        return getExpenseBetweenDates(userId, fdate, tdate);
+        return getExpenseTotalByUserAndDate(userId, fdate, tdate);
     }
 
     @Override
     public BigDecimal todaysExpense(int userId) {
-        return dateRangeSum(userId, LocalDate.now(), LocalDate.now().plusDays(1));
+        LocalDate today = LocalDate.now();
+        return getExpenseTotalByUserAndDate(userId, today, today);
     }
 
     @Override
     public BigDecimal yesterdayExpense(int userId) {
         LocalDate yesterday = LocalDate.now().minusDays(1);
-        return dateRangeSum(userId, yesterday, yesterday.plusDays(1));
+        return getExpenseTotalByUserAndDate(userId, yesterday, yesterday);
     }
 
     @Override
     public BigDecimal weekExpense(int userId) {
         LocalDate today = LocalDate.now();
-        return dateRangeSum(userId, today.minusDays(7), today);
+        return getExpenseTotalByUserAndDate(userId, today.minusDays(6), today);
     }
 
     @Override
     public BigDecimal monthExpense(int userId) {
         LocalDate now = LocalDate.now();
-        return dateRangeSum(
-                userId,
-                now.withDayOfMonth(1),
-                now.plusMonths(1).withDayOfMonth(1)
-        );
+        LocalDate start = now.withDayOfMonth(1);
+        return getExpenseTotalByUserAndDate(userId, start, now);
     }
 
     @Override
     public BigDecimal yearExpense(int userId) {
-        BigDecimal total = BigDecimal.ZERO;
-
-        try {
-            int year = LocalDate.now().getYear();
-
-            List<Document> pipeline = Arrays.asList(
-                    new Document("$match", new Document("user_id", userId)),
-                    new Document("$addFields",
-                            new Document("year",
-                                    new Document("$year", "$expenseDate"))),
-                    new Document("$match", new Document("year", year)),
-                    new Document("$group",
-                            new Document("_id", null)
-                                    .append("total", new Document("$sum", "$amount")))
-            );
-
-            Document result = expenseCollection.aggregate(pipeline).first();
-
-            if (result != null) {
-                total = BigDecimal.valueOf(((Number) result.get("total")).doubleValue());
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return total;
+        LocalDate now = LocalDate.now();
+        LocalDate start = now.withDayOfYear(1);
+        return getExpenseTotalByUserAndDate(userId, start, now);
     }
 
     @Override
     public BigDecimal totalExpense(int userId) {
-        BigDecimal total = BigDecimal.ZERO;
-
-        try {
-            Document result = expenseCollection.aggregate(
-                    Arrays.asList(
-                            new Document("$match", new Document("user_id", userId)),
-                            new Document("$group",
-                                    new Document("_id", null)
-                                            .append("total", new Document("$sum", "$amount")))
-                    )
-            ).first();
-
-            if (result != null) {
-                total = BigDecimal.valueOf(((Number) result.get("total")).doubleValue());
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return total;
+        return getExpenseTotalByUserAndDate(userId, LocalDate.of(1970,1,1), LocalDate.now());
     }
 
-    private BigDecimal dateRangeSum(int userId, LocalDate from, LocalDate to) {
-        BigDecimal total = BigDecimal.ZERO;
+    // Inner class to map Expense to Firestore with string userId
+    private static class ExpenseFirestore {
+        private String expenseId;
+        private String userId;
+        private LocalDate expenseDate;
+        private BigDecimal amount;
+        private String category;
+        private String description;
 
-        try {
-            Date start = Date.from(from.atStartOfDay(ZoneId.systemDefault()).toInstant());
-            Date end = Date.from(to.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        public ExpenseFirestore() {}
 
-            List<Document> pipeline = Arrays.asList(
-                    new Document("$match",
-                            and(
-                                    eq("user_id", userId),
-                                    gte("expenseDate", start),
-                                    lt("expenseDate", end)
-                            )
-                    ),
-                    new Document("$group",
-                            new Document("_id", null)
-                                    .append("total", new Document("$sum", "$amount")))
-            );
-
-            Document result = expenseCollection.aggregate(pipeline).first();
-
-            if (result != null) {
-                total = BigDecimal.valueOf(((Number) result.get("total")).doubleValue());
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
+        public ExpenseFirestore(Expense e) {
+            this.expenseId = String.valueOf(e.getExpenseId());
+            this.userId = String.valueOf(e.getUserId());
+            this.expenseDate = e.getExpenseDate();
+            this.amount = e.getAmount();
+            this.category = e.getCategory();
+            this.description = e.getDescription();
         }
 
-        return total;
+        public Expense toExpense() {
+            Expense e = new Expense();
+            e.setExpenseId(Integer.parseInt(expenseId));
+            e.setUserId(Integer.parseInt(userId));
+            e.setExpenseDate(expenseDate);
+            e.setAmount(amount);
+            e.setCategory(category);
+            e.setDescription(description);
+            return e;
+        }
     }
 }

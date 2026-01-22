@@ -7,6 +7,7 @@ public class User {
     private String email;
     private String password;
     private String mobile;
+    private String createdAt;
 
     public User() {}
 
@@ -17,12 +18,13 @@ public class User {
         this.mobile = mobile;
     }
 
-    public User(int userId, String name, String email, String password, String mobile) {
+    public User(int userId, String name, String email, String password, String mobile, String createdAt) {
         this.userId = userId;
         this.name = name;
         this.email = email;
         this.password = password;
         this.mobile = mobile;
+        this.createdAt = createdAt;
     }
 
     public int getUserId() { return userId; }
@@ -39,4 +41,7 @@ public class User {
 
     public String getMobile() { return mobile; }
     public void setMobile(String mobile) { this.mobile = mobile; }
+
+    public String getCreatedAt() { return createdAt; }
+    public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
 }
