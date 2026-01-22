@@ -6,6 +6,7 @@ import com.kagrawal.util.FirebaseUtil;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -21,13 +22,12 @@ public class ExpenseDAOImpl implements ExpenseDAO {
     @Override
     public boolean addExpense(Expense e) {
         try {
-            String docId = String.valueOf(System.currentTimeMillis() / 1000); // unique doc id
-            e.setExpenseId(Integer.parseInt(docId)); // optional, for local reference
+            int expenseId = (int) (System.currentTimeMillis() / 1000);
+            e.setExpenseId(expenseId);
 
-            // Firestore document map
             db.collection("expenses")
-                    .document(docId)
-                    .set(new ExpenseFirestore(e))
+                    .document(String.valueOf(expenseId))
+                    .set(toFirestoreObject(e))
                     .get();
 
             return true;
@@ -40,18 +40,20 @@ public class ExpenseDAOImpl implements ExpenseDAO {
     @Override
     public List<Expense> getExpensesByUser(int userId) {
         List<Expense> list = new ArrayList<>();
+
         try {
             QuerySnapshot snapshot = db.collection("expenses")
-                    .whereEqualTo("userId", String.valueOf(userId))
+                    .whereEqualTo("userId", userId)   // NUMBER match
                     .get()
                     .get();
 
             for (DocumentSnapshot doc : snapshot.getDocuments()) {
-                list.add(doc.toObject(ExpenseFirestore.class).toExpense());
+                list.add(fromFirestore(doc));
             }
         } catch (InterruptedException | ExecutionException ex) {
             ex.printStackTrace();
         }
+
         return list;
     }
 
@@ -67,16 +69,22 @@ public class ExpenseDAOImpl implements ExpenseDAO {
         }
     }
 
+    /* =========================
+       TOTAL CALCULATION HELPERS
+       ========================= */
+
     private BigDecimal getExpenseTotalByUserAndDate(int userId, LocalDate from, LocalDate to) {
         BigDecimal total = BigDecimal.ZERO;
+
         try {
             QuerySnapshot snapshot = db.collection("expenses")
-                    .whereEqualTo("userId", String.valueOf(userId))
+                    .whereEqualTo("userId", userId)
                     .get()
                     .get();
 
             for (DocumentSnapshot doc : snapshot.getDocuments()) {
-                Expense e = doc.toObject(ExpenseFirestore.class).toExpense();
+                Expense e = fromFirestore(doc);
+
                 if ((e.getExpenseDate().isEqual(from) || e.getExpenseDate().isAfter(from)) &&
                         e.getExpenseDate().isBefore(to.plusDays(1))) {
                     total = total.add(e.getAmount());
@@ -85,8 +93,13 @@ public class ExpenseDAOImpl implements ExpenseDAO {
         } catch (InterruptedException | ExecutionException ex) {
             ex.printStackTrace();
         }
+
         return total;
     }
+
+    /* =========================
+       INTERFACE METHODS
+       ========================= */
 
     @Override
     public BigDecimal getDayWiseExpenseTotal(int userId, LocalDate fdate, LocalDate tdate) {
@@ -124,51 +137,53 @@ public class ExpenseDAOImpl implements ExpenseDAO {
     @Override
     public BigDecimal monthExpense(int userId) {
         LocalDate now = LocalDate.now();
-        LocalDate start = now.withDayOfMonth(1);
-        return getExpenseTotalByUserAndDate(userId, start, now);
+        return getExpenseTotalByUserAndDate(userId, now.withDayOfMonth(1), now);
     }
 
     @Override
     public BigDecimal yearExpense(int userId) {
         LocalDate now = LocalDate.now();
-        LocalDate start = now.withDayOfYear(1);
-        return getExpenseTotalByUserAndDate(userId, start, now);
+        return getExpenseTotalByUserAndDate(userId, now.withDayOfYear(1), now);
     }
 
     @Override
     public BigDecimal totalExpense(int userId) {
-        return getExpenseTotalByUserAndDate(userId, LocalDate.of(1970,1,1), LocalDate.now());
+        return getExpenseTotalByUserAndDate(
+                userId,
+                LocalDate.of(1970, 1, 1),
+                LocalDate.now()
+        );
     }
 
-    // Inner class to map Expense to Firestore with string userId
-    private static class ExpenseFirestore {
-        private String expenseId;
-        private String userId;
-        private LocalDate expenseDate;
-        private BigDecimal amount;
-        private String category;
-        private String description;
+    /* =========================
+       FIRESTORE MAPPERS
+       ========================= */
 
-        public ExpenseFirestore() {}
+    private Expense fromFirestore(DocumentSnapshot doc) {
+        Expense e = new Expense();
 
-        public ExpenseFirestore(Expense e) {
-            this.expenseId = String.valueOf(e.getExpenseId());
-            this.userId = String.valueOf(e.getUserId());
-            this.expenseDate = e.getExpenseDate();
-            this.amount = e.getAmount();
-            this.category = e.getCategory();
-            this.description = e.getDescription();
-        }
+        e.setExpenseId(doc.getLong("expenseId").intValue());
+        e.setUserId(doc.getLong("userId").intValue());
 
-        public Expense toExpense() {
-            Expense e = new Expense();
-            e.setExpenseId(Integer.parseInt(expenseId));
-            e.setUserId(Integer.parseInt(userId));
-            e.setExpenseDate(expenseDate);
-            e.setAmount(amount);
-            e.setCategory(category);
-            e.setDescription(description);
-            return e;
-        }
+        String isoDate = doc.getString("expenseDate");
+        e.setExpenseDate(OffsetDateTime.parse(isoDate).toLocalDate());
+
+        e.setAmount(new BigDecimal(doc.get("amount").toString()));
+        e.setCategory(doc.getString("category"));
+        e.setDescription(doc.getString("description"));
+
+        return e;
+    }
+
+    private Object toFirestoreObject(Expense e) {
+        return new Object() {
+            public final int expenseId = e.getExpenseId();
+            public final int userId = e.getUserId();
+            public final String expenseDate = e.getExpenseDate().toString() + "T00:00:00.000Z";
+            public final BigDecimal amount = e.getAmount();
+            public final String category = e.getCategory();
+            public final String description = e.getDescription();
+            public final String createdAt = OffsetDateTime.now().toString();
+        };
     }
 }
