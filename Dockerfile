@@ -1,30 +1,32 @@
-# Stage 1: Build the WAR using Maven
+# Stage 1: Build WAR
 FROM maven:3.9.4-eclipse-temurin-17 AS build
 
-# Set working directory
 WORKDIR /app
 
-# Copy pom.xml and download dependencies first (caching layer)
 COPY pom.xml .
 RUN mvn dependency:go-offline -B
 
-# Copy source code
 COPY src ./src
-
-# Build the WAR
 RUN mvn clean package -DskipTests
 
-# Stage 2: Run WAR in Tomcat
+# Stage 2: Run in Tomcat
 FROM tomcat:10.1-jdk17
 
-# Remove default Tomcat apps
 RUN rm -rf /usr/local/tomcat/webapps/*
 
-# Copy the WAR from the build stage
+# Create directory for credentials
+RUN mkdir -p /app/config
+
 COPY --from=build /app/target/MVC_DETS.war /usr/local/tomcat/webapps/ROOT.war
 
-# Expose port
+# Handle Firebase credentials if provided as env variable
+RUN echo '#!/bin/bash\n\
+if [ -n "$FIREBASE_SERVICE_ACCOUNT_KEY" ]; then\n\
+  echo "$FIREBASE_SERVICE_ACCOUNT_KEY" > /app/config/firebase-key.json\n\
+  export GOOGLE_APPLICATION_CREDENTIALS=/app/config/firebase-key.json\n\
+fi\n\
+exec catalina.sh run' > /entrypoint.sh && chmod +x /entrypoint.sh
+
 EXPOSE 8080
 
-# Run Tomcat
-CMD ["catalina.sh", "run"]
+ENTRYPOINT ["/entrypoint.sh"]

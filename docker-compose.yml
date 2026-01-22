@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   backend:
     build:
@@ -8,34 +6,14 @@ services:
     container_name: mvc_backend
     ports:
       - "8080:8080"
-    env_file:
-      - .env
-    depends_on:
-      - mongodb
-    # Optional: Wait for MongoDB to be ready
-    command: >
-      sh -c "
-        until nc -z mongodb 27017; do
-          echo 'Waiting for MongoDB...'
-          sleep 2
-        done
-        catalina.sh run
-      "
-
-  mongodb:
-    image: mongo:7
-    container_name: mvc_mongodb
-    ports:
-      - "27017:27017"
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/firebase-key.json
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
     volumes:
-      - mongo_data:/data/db
+      - ./firebase-key.json:/app/firebase-key.json:ro
+    networks:
+      - mvc_network
 
-  # Optional: cache Maven dependencies for faster rebuilds
-  maven_cache:
-    image: busybox
-    volumes:
-      - maven_repo:/root/.m2
-
-volumes:
-  mongo_data:
-  maven_repo:
+networks:
+  mvc_network:
+    driver: bridge
