@@ -31,11 +31,12 @@
             <version>3.0.1</version>
         </dependency>
 
-        <!-- MongoDB driver -->
+        <!-- Source: https://mvnrepository.com/artifact/com.google.firebase/firebase-admin -->
         <dependency>
-            <groupId>org.mongodb</groupId>
-            <artifactId>mongodb-driver-sync</artifactId>
-            <version>4.11.1</version>
+            <groupId>com.google.firebase</groupId>
+            <artifactId>firebase-admin</artifactId>
+            <version>9.7.0</version>
+            <scope>compile</scope>
         </dependency>
 
         <!-- JUnit for testing -->
@@ -45,6 +46,7 @@
             <version>4.13.2</version>
             <scope>test</scope>
         </dependency>
+
     </dependencies>
 
     <build>
