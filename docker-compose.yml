@@ -7,10 +7,9 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - GOOGLE_APPLICATION_CREDENTIALS=/app/firebase-key.json
-      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
-    volumes:
-      - ./firebase-key.json:/app/firebase-key.json:ro
+      # Tell backend where to find the emulator (on host machine)
+      - FIRESTORE_EMULATOR_HOST=host.docker.internal:8085
+      - FIREBASE_PROJECT_ID=mvcdets
     networks:
       - mvc_network
 
