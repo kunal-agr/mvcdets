@@ -164,24 +164,28 @@ public class AuthController extends HttpServlet {
 
     // ================= CHANGE PASSWORD =================
     private void changePassword(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        HttpSession session = req.getSession(false);
-        if (session == null || session.getAttribute("user") == null) {
-            resp.sendRedirect(req.getContextPath() + "/index.jsp");
-            return;
-        }
+        resp.setContentType("application/json");
 
-        int userId = ((User) session.getAttribute("user")).getUserId();
-        String oldPassword = req.getParameter("currentpassword");
-        String newPassword = req.getParameter("newpassword");
+        Map<String, String> body = mapper.readValue(req.getInputStream(), Map.class);
+        int userId = Integer.parseInt(body.get("userId"));  // get from JSON instead of session
+        String oldPassword = body.get("currentPassword");
+        String newPassword = body.get("newPassword");
+
+        Map<String, Object> json = new HashMap<>();
 
         boolean valid = userDAO.validateUserByIdAndPassword(userId, oldPassword);
 
         if (valid && userDAO.updatePassword(userId, newPassword)) {
-            resp.sendRedirect(req.getContextPath() + "/change-password.jsp?changed=1");
+            resp.setStatus(HttpServletResponse.SC_OK);
+            json.put("message", "Password changed successfully.");
         } else {
-            resp.sendRedirect(req.getContextPath() + "/change-password.jsp?changed=0");
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            json.put("error", "Invalid userId or current password.");
         }
+
+        resp.getWriter().write(mapper.writeValueAsString(json));
     }
+
 
     private void logout(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
