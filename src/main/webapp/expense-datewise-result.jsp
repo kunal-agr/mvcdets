@@ -1,21 +1,13 @@
-<%@ page import="java.math.BigDecimal" %>
+<%@ page import="javax.servlet.http.*, javax.servlet.*" %>
 <%
     if (session == null || session.getAttribute("userId") == null) {
-        response.sendRedirect("user?action=logout");
+        response.sendRedirect("index.jsp");
         return;
     }
+
     String username = "User";
     if (session.getAttribute("userName") != null) {
         username = session.getAttribute("userName").toString();
-    }
-
-    BigDecimal grandTotal = (BigDecimal) request.getAttribute("grandTotal");
-    java.time.LocalDate fromDate = (java.time.LocalDate) request.getAttribute("fromDate");
-    java.time.LocalDate toDate = (java.time.LocalDate) request.getAttribute("toDate");
-
-    if (grandTotal == null || fromDate == null || toDate == null) {
-        response.sendRedirect("expense-datewise-reports.jsp");
-        return;
     }
 %>
 
@@ -57,16 +49,14 @@
             </div>
             <div class="clear"></div>
         </div>
+
         <div class="divider"></div>
 
         <ul class="nav menu">
             <li><a href="dashboard.jsp"><em class="fa fa-dashboard">&nbsp;</em> Dashboard</a></li>
             <li class="parent">
-                <a data-toggle="collapse" href="#sub-item-1">
-                    <em class="fa fa-navicon">&nbsp;</em>Expenses
-                    <span data-toggle="collapse" href="#sub-item-1" class="icon pull-right">
-                        <em class="fa fa-plus"></em>
-                    </span>
+                <a data-toggle="collapse" href="#sub-item-1"><em class="fa fa-navicon">&nbsp;</em>Expenses
+                    <span data-toggle="collapse" href="#sub-item-1" class="icon pull-right"><em class="fa fa-plus"></em></span>
                 </a>
                 <ul class="children collapse" id="sub-item-1">
                     <li><a href="add-expense.jsp"><span class="fa fa-arrow-right">&nbsp;</span> Add Expenses</a></li>
@@ -74,11 +64,8 @@
                 </ul>
             </li>
             <li class="parent">
-                <a data-toggle="collapse" href="#sub-item-2">
-                    <em class="fa fa-navicon">&nbsp;</em>Expense Report
-                    <span data-toggle="collapse" href="#sub-item-2" class="icon pull-right">
-                        <em class="fa fa-plus"></em>
-                    </span>
+                <a data-toggle="collapse" href="#sub-item-2"><em class="fa fa-navicon">&nbsp;</em>Expense Report
+                    <span data-toggle="collapse" href="#sub-item-2" class="icon pull-right"><em class="fa fa-plus"></em></span>
                 </a>
                 <ul class="children collapse" id="sub-item-2">
                     <li><a href="expense-datewise-reports.jsp"><span class="fa fa-arrow-right">&nbsp;</span> Daywise Expenses</a></li>
@@ -88,7 +75,11 @@
             </li>
             <li><a href="user-profile.jsp"><em class="fa fa-user">&nbsp;</em> Profile</a></li>
             <li><a href="change-password.jsp"><em class="fa fa-clone">&nbsp;</em> Change Password</a></li>
-            <li><a href="user?action=logout"><em class="fa fa-power-off">&nbsp;</em> Logout</a></li>
+            <li>
+                <a href="#" onclick="logout()">
+                    <em class="fa fa-power-off">&nbsp;</em> Logout
+                </a>
+            </li>
         </ul>
     </div>
 
@@ -103,9 +94,7 @@
         <div class="panel panel-default">
             <div class="panel-heading">Datewise Expense Report</div>
             <div class="panel-body">
-                <h5 align="center" style="color:blue">
-                    Datewise Expense Report from <%= fromDate %> to <%= toDate %>
-                </h5>
+                <h5 id="reportTitle" align="center" style="color:blue"></h5>
                 <hr />
                 <table class="table table-bordered table-striped">
                     <thead>
@@ -115,11 +104,7 @@
                             <th>Expense Amount</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <th colspan="2" style="text-align:center">Grand Total</th>
-                            <td><strong><%= grandTotal %></strong></td>
-                        </tr>
+                    <tbody id="reportBody">
                     </tbody>
                 </table>
             </div>
@@ -131,6 +116,40 @@
     <script src="js/jquery-1.11.1.min.js"></script>
     <script src="js/bootstrap.min.js"></script>
     <script src="js/custom.js"></script>
+    <script>
+        window.addEventListener("load", function() {
+            const data = JSON.parse(sessionStorage.getItem("datewiseResult"));
 
+            if (!data) {
+                alert("No data found. Please generate report first.");
+                window.location.href = 'expense-datewise-reports.jsp';
+                return;
+            }
+
+            const reportTitle = document.getElementById("reportTitle");
+            reportTitle.textContent = `Datewise Expense Report from ${data.fromDate} to ${data.toDate}`;
+
+            const tbody = document.getElementById("reportBody");
+            tbody.innerHTML = `
+                <tr>
+                    <th colspan="2" style="text-align:center">Grand Total</th>
+                    <td><strong>${data.total}</strong></td>
+                </tr>
+            `;
+
+            // Clear sessionStorage if needed
+            sessionStorage.removeItem("datewiseResult");
+        });
+    </script>
+    <script>
+        async function logout() {
+            try {
+                await fetch('<%=request.getContextPath()%>/api/auth/logout');
+                window.location.href = 'index.jsp';
+            } catch (e) {
+                alert('Logout failed');
+            }
+        }
+    </script>
     </body>
 </html>
