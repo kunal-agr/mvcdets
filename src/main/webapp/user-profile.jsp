@@ -1,30 +1,4 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="com.kagrawal.model.User" %>
-
-<%
-    HttpSession sess = request.getSession(false);
-
-    if (sess == null || sess.getAttribute("userId") == null) {
-        response.sendRedirect("user?action=logout");
-        return;
-    }
-
-    Integer userId = (Integer) sess.getAttribute("userId");
-    String username = sess.getAttribute("userName") != null
-            ? sess.getAttribute("userName").toString()
-            : "User";
-
-    User user = (User) request.getAttribute("user");
-
-    if (user == null) {
-        response.sendRedirect("user?action=profile");
-        return;
-    }
-
-    String msg = request.getAttribute("msg") != null
-            ? request.getAttribute("msg").toString()
-            : "";
-%>
 
 <!DOCTYPE html>
 <html>
@@ -41,10 +15,12 @@
 
 <body>
 
+<!-- NAVBAR -->
 <nav class="navbar navbar-custom navbar-fixed-top" role="navigation">
     <div class="container-fluid">
         <div class="navbar-header">
-            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#sidebar-collapse">
+            <button type="button" class="navbar-toggle collapsed"
+                    data-toggle="collapse" data-target="#sidebar-collapse">
                 <span class="sr-only">Toggle navigation</span>
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
@@ -57,13 +33,14 @@
     </div>
 </nav>
 
+<!-- SIDEBAR -->
 <div id="sidebar-collapse" class="col-sm-3 col-lg-2 sidebar">
     <div class="profile-sidebar">
         <div class="profile-userpic">
-            <img src="http://placehold.it/50/30a5ff/fff" class="img-responsive" alt="">
+            <img src="http://placehold.it/50/30a5ff/fff" class="img-responsive">
         </div>
         <div class="profile-usertitle">
-            <div class="profile-usertitle-name"><%= username %></div>
+            <div class="profile-usertitle-name" id="sidebarUsername">User</div>
             <div class="profile-usertitle-status">
                 <span class="indicator label-success"></span>Online
             </div>
@@ -74,7 +51,7 @@
     <div class="divider"></div>
 
     <ul class="nav menu">
-        <li class="active">
+        <li>
             <a href="dashboard.jsp">
                 <em class="fa fa-dashboard">&nbsp;</em> Dashboard
             </a>
@@ -103,12 +80,22 @@
             </ul>
         </li>
 
-        <li><a href="user-profile.jsp"><em class="fa fa-user">&nbsp;</em> Profile</a></li>
+        <li class="active">
+            <a href="user-profile.jsp">
+                <em class="fa fa-user">&nbsp;</em> Profile
+            </a>
+        </li>
+
         <li><a href="change-password.jsp"><em class="fa fa-clone">&nbsp;</em> Change Password</a></li>
-        <li><a href="user?action=logout"><em class="fa fa-power-off">&nbsp;</em> Logout</a></li>
+        <li>
+            <a href="#" onclick="logout()">
+                <em class="fa fa-power-off">&nbsp;</em> Logout
+            </a>
+        </li>
     </ul>
 </div>
 
+<!-- MAIN -->
 <div class="col-sm-9 col-sm-offset-3 col-lg-10 col-lg-offset-2 main">
 
     <div class="row">
@@ -122,33 +109,29 @@
         <div class="panel-heading">Profile</div>
         <div class="panel-body">
 
-            <p style="font-size:16px; color:red" align="center"><%= msg %></p>
+            <p id="msg" style="font-size:16px; color:red" align="center"></p>
 
-            <form method="post" action="user?action=updateProfile">
+            <!-- SAME MVC FORM UI -->
+            <form id="profileForm">
 
                 <div class="form-group">
                     <label>Full Name</label>
-                    <input class="form-control" type="text" name="fullname"
-                           value="<%= user.getName() %>" required>
+                    <input class="form-control" id="fullname" required>
                 </div>
 
                 <div class="form-group">
                     <label>Email</label>
-                    <input class="form-control" type="email"
-                           value="<%= user.getEmail() %>" readonly>
+                    <input class="form-control" id="email" readonly>
                 </div>
 
                 <div class="form-group">
                     <label>Mobile Number</label>
-                    <input class="form-control" type="text" name="contactnumber"
-                           value="<%= user.getMobile() != null ? user.getMobile() : "" %>"
-                           maxlength="10" required>
+                    <input class="form-control" id="mobile" maxlength="10" required>
                 </div>
 
                 <div class="form-group">
                     <label>Registration Date</label>
-                    <input type="text" class="form-control"
-                           value="<%= user.getCreatedAt() != null ? user.getCreatedAt() : "" %>" readonly>
+                    <input class="form-control" id="createdAt" readonly>
                 </div>
 
                 <button type="submit" class="btn btn-primary">Update</button>
@@ -163,5 +146,66 @@
 <script src="js/jquery-1.11.1.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
 
+<!-- 🔥 REST JS – UNTOUCHED -->
+<script>
+    async function loadProfile() {
+        const res = await fetch('api/user/profile');
+
+        if (res.status === 401) {
+            window.location.href = 'index.jsp';
+            return;
+        }
+
+        const { user } = await res.json();
+
+        fullname.value = user.name;
+        email.value = user.email;
+        mobile.value = user.mobile;
+        sidebarUsername.innerText = user.name;
+
+        let raw = user.createdAt;
+        let date;
+
+        if (!isNaN(raw)) {
+            date = new Date(Number(raw));
+        } else {
+            date = new Date(raw.replace(" ", "T"));
+        }
+
+        createdAt.value = date.toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "long",
+            year: "numeric"
+        });
+    }
+
+    profileForm.addEventListener('submit', async e => {
+        e.preventDefault();
+
+        const res = await fetch('api/user/profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                fullname: fullname.value,
+                contactnumber: mobile.value
+            })
+        });
+
+        const data = await res.json();
+        msg.innerText = res.ok ? data.message : data.error;
+    });
+
+    loadProfile();
+</script>
+<script>
+    async function logout() {
+        try {
+            await fetch('<%=request.getContextPath()%>/api/auth/logout');
+            window.location.href = 'index.jsp';
+        } catch (e) {
+            alert('Logout failed');
+        }
+    }
+</script>
 </body>
 </html>
