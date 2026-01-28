@@ -1,23 +1,13 @@
-<%@ page import="java.math.BigDecimal" %>
-<%@ page import="java.util.List" %>
+<%@ page import="javax.servlet.http.*, javax.servlet.*" %>
 <%
     if (session == null || session.getAttribute("userId") == null) {
-        response.sendRedirect("user?action=logout");
+        response.sendRedirect("index.jsp");
         return;
     }
 
     String username = "User";
     if (session.getAttribute("userName") != null) {
         username = session.getAttribute("userName").toString();
-    }
-
-    BigDecimal grandTotal = (BigDecimal) request.getAttribute("grandTotal");
-    String fromYear = (String) request.getAttribute("fromYear");
-    String toYear = (String) request.getAttribute("toYear");
-
-    if (grandTotal == null || fromYear == null || toYear == null) {
-        response.sendRedirect("expense-yearwise-reports.jsp");
-        return;
     }
 %>
 
@@ -27,11 +17,13 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Daily Expense Tracker || Yearwise Expense Result</title>
+
         <link href="css/bootstrap.min.css" rel="stylesheet">
         <link href="css/font-awesome.min.css" rel="stylesheet">
         <link href="css/datepicker3.css" rel="stylesheet">
         <link href="css/styles.css" rel="stylesheet">
     </head>
+
     <body>
 
     <nav class="navbar navbar-custom navbar-fixed-top" role="navigation">
@@ -43,7 +35,9 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand" href="dashboard.jsp"><span>Daily Expense Tracker</span></a>
+                <a class="navbar-brand" href="dashboard.jsp">
+                    <span>Daily Expense Tracker</span>
+                </a>
             </div>
         </div>
     </nav>
@@ -51,7 +45,7 @@
     <div id="sidebar-collapse" class="col-sm-3 col-lg-2 sidebar">
         <div class="profile-sidebar">
             <div class="profile-userpic">
-                <img src="http://placehold.it/50/30a5ff/fff" class="img-responsive" alt="">
+                <img src="http://placehold.it/50/30a5ff/fff" class="img-responsive">
             </div>
             <div class="profile-usertitle">
                 <div class="profile-usertitle-name"><%= username %></div>
@@ -61,28 +55,27 @@
             </div>
             <div class="clear"></div>
         </div>
+
         <div class="divider"></div>
 
         <ul class="nav menu">
             <li><a href="dashboard.jsp"><em class="fa fa-dashboard">&nbsp;</em> Dashboard</a></li>
+
             <li class="parent">
                 <a data-toggle="collapse" href="#sub-item-1">
                     <em class="fa fa-navicon">&nbsp;</em>Expenses
-                    <span data-toggle="collapse" href="#sub-item-1" class="icon pull-right">
-                        <em class="fa fa-plus"></em>
-                    </span>
+                    <span class="icon pull-right"><em class="fa fa-plus"></em></span>
                 </a>
                 <ul class="children collapse" id="sub-item-1">
                     <li><a href="add-expense.jsp"><span class="fa fa-arrow-right">&nbsp;</span> Add Expenses</a></li>
                     <li><a href="manage-expense.jsp"><span class="fa fa-arrow-right">&nbsp;</span> Manage Expenses</a></li>
                 </ul>
             </li>
+
             <li class="parent active">
                 <a data-toggle="collapse" href="#sub-item-2">
                     <em class="fa fa-navicon">&nbsp;</em>Expense Report
-                    <span data-toggle="collapse" href="#sub-item-2" class="icon pull-right">
-                        <em class="fa fa-plus"></em>
-                    </span>
+                    <span class="icon pull-right"><em class="fa fa-plus"></em></span>
                 </a>
                 <ul class="children collapse in" id="sub-item-2">
                     <li><a href="expense-datewise-reports.jsp"><span class="fa fa-arrow-right">&nbsp;</span> Daywise Expenses</a></li>
@@ -90,16 +83,21 @@
                     <li class="active"><a href="expense-yearwise-reports.jsp"><span class="fa fa-arrow-right">&nbsp;</span> Yearwise Expenses</a></li>
                 </ul>
             </li>
+
             <li><a href="user-profile.jsp"><em class="fa fa-user">&nbsp;</em> Profile</a></li>
             <li><a href="change-password.jsp"><em class="fa fa-clone">&nbsp;</em> Change Password</a></li>
-            <li><a href="user?action=logout"><em class="fa fa-power-off">&nbsp;</em> Logout</a></li>
+            <li>
+                <a href="#" onclick="logout()">
+                    <em class="fa fa-power-off">&nbsp;</em> Logout
+                </a>
+            </li>
         </ul>
     </div>
 
     <div class="col-sm-9 col-sm-offset-3 col-lg-10 col-lg-offset-2 main">
         <div class="row">
             <ol class="breadcrumb">
-                <li><a href="dashboard.jsp"><em class="fa fa-home"></em></a></li>
+                <li><a href="#"><em class="fa fa-home"></em></a></li>
                 <li class="active">Yearwise Expense Result</li>
             </ol>
         </div>
@@ -107,27 +105,19 @@
         <div class="panel panel-default">
             <div class="panel-heading">Yearwise Expense Report</div>
             <div class="panel-body">
-                <h5 align="center" style="color:blue">
-                    Yearwise Expense Report from <strong><%= fromYear %></strong> to <strong><%= toYear %></strong>
-                </h5>
+                <h5 id="reportTitle" align="center" style="color:blue"></h5>
                 <hr />
-                <div class="table-responsive">
-                    <table class="table table-bordered table-striped">
-                        <thead>
-                            <tr>
-                                <th>S.NO</th>
-                                <th>Year</th>
-                                <th>Expense Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <th colspan="2" style="text-align:center">Grand Total</th>
-                                <td><strong><%= grandTotal %></strong></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>S.NO</th>
+                            <th>Year</th>
+                            <th>Expense Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportBody"></tbody>
+                </table>
             </div>
         </div>
 
@@ -138,5 +128,40 @@
     <script src="js/bootstrap.min.js"></script>
     <script src="js/custom.js"></script>
 
+    <script>
+        window.addEventListener("load", function () {
+            const data = JSON.parse(sessionStorage.getItem("yearwiseResult"));
+
+            if (!data) {
+                alert("No data found. Please generate report first.");
+                window.location.href = "expense-yearwise-reports.jsp";
+                return;
+            }
+
+            document.getElementById("reportTitle").textContent =
+                `Yearwise Expense Report from ${data.fromDate} to ${data.toDate}`;
+
+            const tbody = document.getElementById("reportBody");
+
+            tbody.innerHTML = `
+                <tr>
+                    <th colspan="2" style="text-align:center">Grand Total</th>
+                    <td><strong>${data.total}</strong></td>
+                </tr>
+            `;
+
+            sessionStorage.removeItem("yearwiseResult");
+        });
+    </script>
+    <script>
+        async function logout() {
+            try {
+                await fetch('<%=request.getContextPath()%>/api/auth/logout');
+                window.location.href = 'index.jsp';
+            } catch (e) {
+                alert('Logout failed');
+            }
+        }
+    </script>
     </body>
 </html>
