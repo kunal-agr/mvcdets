@@ -74,24 +74,21 @@ public class ExpenseController extends HttpServlet {
             LocalDate to = LocalDate.parse(req.getParameter("todate"));
             BigDecimal total = expenseDAO.getMonthWiseExpenseTotal(userId, from, to);
             Map<String, Object> res = new HashMap<>();
-            res.put("fromMonth", from);
-            res.put("toMonth", to);
+            res.put("fromDate", from);   // <-- use fromDate
+            res.put("toDate", to);       // <-- use toDate
             res.put("total", total);
             resp.getWriter().write(mapper.writeValueAsString(res));
-
         } else if (path.equals("/year")) {
             LocalDate from = LocalDate.parse(req.getParameter("fromdate"));
             LocalDate to = LocalDate.parse(req.getParameter("todate"));
-
             BigDecimal total = expenseDAO.getYearWiseExpenseTotal(userId, from, to);
-
             Map<String, Object> res = new HashMap<>();
-            res.put("fromYear", from);
-            res.put("toYear", to);
+            res.put("fromDate", from);   // <-- use fromDate
+            res.put("toDate", to);       // <-- use toDate
             res.put("total", total);
-
             resp.getWriter().write(mapper.writeValueAsString(res));
         }
+
     }
 
     @Override
