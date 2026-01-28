@@ -38,10 +38,7 @@
                 <div class="login-panel panel panel-default">
                     <div class="panel-heading">Sign Up</div>
                     <div class="panel-body">
-                        <form name="signup"
-                              method="post"
-                              action="user?action=register"
-                              onsubmit="return checkpass();">
+                        <form name="signup" onsubmit="registerUser(); return false;">
 
                             <fieldset>
                                 <div class="form-group">
@@ -110,5 +107,29 @@
         <script src="<c:url value='/js/bootstrap.min.js'/>"></script>
         <script src="<c:url value='/js/easypiechart.js'/>"></script>
         <script src="<c:url value='/js/easypiechart-data.js'/>"></script>
+        <script>
+        function registerUser() {
+
+            if (!checkpass()) return;
+
+            const data = {
+                name: document.querySelector('input[name="name"]').value,
+                email: document.querySelector('input[name="email"]').value,
+                mobile: document.querySelector('input[name="mobile"]').value,
+                password: document.querySelector('input[name="password"]').value
+            };
+
+            fetch('<%=request.getContextPath()%>/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(res => {
+                if (!res.ok) throw new Error();
+                window.location.href = 'index.jsp?success=1';
+            })
+            .catch(() => alert('Registration failed'));
+        }
+        </script>
     </body>
 </html>
