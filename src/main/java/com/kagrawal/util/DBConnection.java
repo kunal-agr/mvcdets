@@ -10,7 +10,7 @@ public class DBConnection {
 
     private static final Dotenv dotenv = Dotenv.configure()
             .ignoreIfMissing()
-            .load();   // 👈 CLASSPATH LOAD (IMPORTANT)
+            .load();
 
     private static final String URL = dotenv.get("DB_URL");
     private static final String USER = dotenv.get("DB_USER");
@@ -27,7 +27,7 @@ public class DBConnection {
     public static Connection getConnection() throws SQLException {
         if (URL == null || USER == null || PASSWORD == null) {
             throw new RuntimeException(
-                    "Database credentials missing. Check src/main/resources/.env"
+                    "Database credentials missing."
             );
         }
         return DriverManager.getConnection(URL, USER, PASSWORD);
