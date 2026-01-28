@@ -1,23 +1,13 @@
-<%@ page import="java.math.BigDecimal" %>
-<%@ page import="java.util.List" %>
+<%@ page import="javax.servlet.http.*, javax.servlet.*" %>
 <%
     if (session == null || session.getAttribute("userId") == null) {
-        response.sendRedirect("user?action=logout");
+        response.sendRedirect("index.jsp");
         return;
     }
 
     String username = "User";
     if (session.getAttribute("userName") != null) {
         username = session.getAttribute("userName").toString();
-    }
-
-    BigDecimal grandTotal = (BigDecimal) request.getAttribute("grandTotal");
-    String fromMonth = (String) request.getAttribute("fromMonth");
-    String toMonth = (String) request.getAttribute("toMonth");
-
-    if (grandTotal == null || fromMonth == null || toMonth == null) {
-        response.sendRedirect("expense-monthwise-reports.jsp");
-        return;
     }
 %>
 
@@ -33,7 +23,6 @@
         <link href="css/datepicker3.css" rel="stylesheet">
         <link href="css/styles.css" rel="stylesheet">
     </head>
-
     <body>
 
     <nav class="navbar navbar-custom navbar-fixed-top" role="navigation">
@@ -53,7 +42,7 @@
     <div id="sidebar-collapse" class="col-sm-3 col-lg-2 sidebar">
         <div class="profile-sidebar">
             <div class="profile-userpic">
-                <img src="http://placehold.it/50/30a5ff/fff" class="img-responsive" alt="">
+                <img src="http://placehold.it/50/30a5ff/fff" class="img-responsive">
             </div>
             <div class="profile-usertitle">
                 <div class="profile-usertitle-name"><%= username %></div>
@@ -63,6 +52,7 @@
             </div>
             <div class="clear"></div>
         </div>
+
         <div class="divider"></div>
 
         <ul class="nav menu">
@@ -71,9 +61,7 @@
             <li class="parent">
                 <a data-toggle="collapse" href="#sub-item-1">
                     <em class="fa fa-navicon">&nbsp;</em>Expenses
-                    <span data-toggle="collapse" href="#sub-item-1" class="icon pull-right">
-                        <em class="fa fa-plus"></em>
-                    </span>
+                    <span class="icon pull-right"><em class="fa fa-plus"></em></span>
                 </a>
                 <ul class="children collapse" id="sub-item-1">
                     <li><a href="add-expense.jsp"><span class="fa fa-arrow-right">&nbsp;</span> Add Expenses</a></li>
@@ -84,9 +72,7 @@
             <li class="parent">
                 <a data-toggle="collapse" href="#sub-item-2">
                     <em class="fa fa-navicon">&nbsp;</em>Expense Report
-                    <span data-toggle="collapse" href="#sub-item-2" class="icon pull-right">
-                        <em class="fa fa-plus"></em>
-                    </span>
+                    <span class="icon pull-right"><em class="fa fa-plus"></em></span>
                 </a>
                 <ul class="children collapse" id="sub-item-2">
                     <li><a href="expense-datewise-reports.jsp"><span class="fa fa-arrow-right">&nbsp;</span> Daywise Expenses</a></li>
@@ -97,7 +83,11 @@
 
             <li><a href="user-profile.jsp"><em class="fa fa-user">&nbsp;</em> Profile</a></li>
             <li><a href="change-password.jsp"><em class="fa fa-clone">&nbsp;</em> Change Password</a></li>
-            <li><a href="user?action=logout"><em class="fa fa-power-off">&nbsp;</em> Logout</a></li>
+            <li>
+                <a href="#" onclick="logout()">
+                    <em class="fa fa-power-off">&nbsp;</em> Logout
+                </a>
+            </li>
         </ul>
     </div>
 
@@ -105,17 +95,17 @@
         <div class="row">
             <ol class="breadcrumb">
                 <li><a href="#"><em class="fa fa-home"></em></a></li>
-                <li class="active">Monthwise Expense Result</li>
+                <li class="active">Monthwise Expense Report</li>
             </ol>
         </div>
 
         <div class="panel panel-default">
             <div class="panel-heading">Monthwise Expense Report</div>
             <div class="panel-body">
-                <h5 align="center" style="color:blue">
-                    Monthwise Expense Report from <strong><%= fromMonth %></strong> to <strong><%= toMonth %></strong>
-                </h5>
-                <hr />
+
+                <h5 id="reportTitle" align="center" style="color:blue"></h5>
+                <hr/>
+
                 <table class="table table-bordered table-striped">
                     <thead>
                         <tr>
@@ -124,13 +114,9 @@
                             <th>Expense Amount</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <th colspan="2" style="text-align:center">Grand Total</th>
-                            <td><strong><%= grandTotal %></strong></td>
-                        </tr>
-                    </tbody>
+                    <tbody id="reportBody"></tbody>
                 </table>
+
             </div>
         </div>
 
@@ -141,5 +127,41 @@
     <script src="js/bootstrap.min.js"></script>
     <script src="js/custom.js"></script>
 
+    <script>
+        window.addEventListener("load", function () {
+
+            const data = JSON.parse(sessionStorage.getItem("monthwiseResult"));
+
+            if (!data) {
+                alert("No data found. Please generate report first.");
+                window.location.href = "expense-monthwise-reports.jsp";
+                return;
+            }
+
+            document.getElementById("reportTitle").textContent =
+                `Monthwise Expense Report from ${data.fromDate} to ${data.toDate}`;
+
+            const tbody = document.getElementById("reportBody");
+
+            tbody.innerHTML = `
+                <tr>
+                    <th colspan="2" style="text-align:center">Grand Total</th>
+                    <td><strong>${data.total}</strong></td>
+                </tr>
+            `;
+
+            sessionStorage.removeItem("monthwiseResult");
+        });
+    </script>
+    <script>
+        async function logout() {
+            try {
+                await fetch('<%=request.getContextPath()%>/api/auth/logout');
+                window.location.href = 'index.jsp';
+            } catch (e) {
+                alert('Logout failed');
+            }
+        }
+    </script>
     </body>
 </html>
