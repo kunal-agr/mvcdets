@@ -1,188 +1,322 @@
 package com.kagrawal.dao;
 
-import com.google.cloud.firestore.*;
 import com.kagrawal.model.Expense;
+import com.kagrawal.util.DBConnection;
 
 import java.math.BigDecimal;
+import java.sql.*;
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 public class ExpenseDAOImpl implements ExpenseDAO {
+    private static final String INSERT_EXPENSE = "INSERT INTO tblexpense (user_id, expense_date, amount, category, description) VALUES (?, ?, ?, ?, ?)";
+    private static final String SELECT_BY_USER = "SELECT * FROM tblexpense WHERE user_id = ? ORDER BY expense_date DESC";
+    private static final String DELETE_EXPENSE = "DELETE FROM tblexpense WHERE expense_id = ?";
 
-    private final Firestore db;
+    private static final String DAY_WISE =
+            "SELECT COALESCE(SUM(amount), 0) " +
+                    "FROM tblexpense " +
+                    "WHERE user_id = ? AND expense_date BETWEEN ? AND ?";
+    private static final String MONTH_WISE =
+            "SELECT COALESCE(SUM(amount), 0) " +
+                    "FROM tblexpense " +
+                    "WHERE user_id = ? AND expense_date BETWEEN ? AND ?";
+    private static final String YEAR_WISE =
+            "SELECT COALESCE(SUM(amount), 0) " +
+                    "FROM tblexpense " +
+                    "WHERE user_id = ? AND expense_date BETWEEN ? AND ?";
+    private static final String TODAY_EXPENSE = "SELECT COALESCE(SUM(amount), 0) AS todays_expense " +
+            "FROM tblexpense " +
+            "WHERE user_id = ? " +
+            "AND expense_date = CURRENT_DATE";
+    private static final String YESTERDAY_EXPENSE = "SELECT COALESCE(SUM(amount), 0) AS yesterdays_expense " +
+            "FROM tblexpense " +
+            "WHERE user_id = ? " +
+            "AND expense_date = CURRENT_DATE - INTERVAL '1 day'";
 
-    public ExpenseDAOImpl() {
-        this.db = FirebaseUtil.getFirestore();
-    }
+    private static final String WEEK_EXPENSE =
+            "SELECT COALESCE(SUM(amount), 0) AS last_7_days_expense " +
+                    "FROM tblexpense " +
+                    "WHERE user_id = ? " +
+                    "AND expense_date >= CURRENT_DATE - INTERVAL '7 day' " +
+                    "AND expense_date < CURRENT_DATE";
+
+    private static final String MONTH_EXPENSE = "SELECT COALESCE(SUM(amount), 0) AS month_expense " +
+            "FROM tblexpense " +
+            "WHERE user_id = ? " +
+            "AND expense_date >= date_trunc('month', CURRENT_DATE) " +
+            "AND expense_date < date_trunc('month', CURRENT_DATE + INTERVAL '1 month')";
+
+    private static final String YEAR_EXPENSE = "SELECT COALESCE(SUM(amount), 0) AS year_expense " +
+            "FROM tblexpense " +
+            "WHERE user_id = ? " +
+            "AND expense_date >= date_trunc('year', CURRENT_DATE) " +
+            "AND expense_date < date_trunc('year', CURRENT_DATE + INTERVAL '1 year')";
+
+    private static final String TOTAL_EXPENSE =
+            "SELECT COALESCE(SUM(amount), 0) AS lifetime_expense " +
+                    "FROM tblexpense " +
+                    "WHERE user_id = ?";
 
     @Override
     public boolean addExpense(Expense e) {
-        try {
-            int expenseId = (int) (System.currentTimeMillis() / 1000);
-            e.setExpenseId(expenseId);
+        boolean status = false;
 
-            db.collection("expenses")
-                    .document(String.valueOf(expenseId))
-                    .set(toFirestoreObject(e))
-                    .get();
+        try(Connection con = DBConnection.getConnection();
+            PreparedStatement stmt = con.prepareStatement(INSERT_EXPENSE)) {
 
-            return true;
-        } catch (InterruptedException | ExecutionException ex) {
-            ex.printStackTrace();
-            return false;
+            stmt.setInt(1, e.getUserId());
+            stmt.setDate(2, java.sql.Date.valueOf(e.getExpenseDate()));
+            stmt.setBigDecimal(3, e.getAmount());
+            stmt.setString(4, e.getCategory());
+            stmt.setString(5, e.getDescription());
+
+            status = stmt.executeUpdate() > 0;
+        } catch (SQLException exception) {
+            exception.printStackTrace();
         }
+        return status;
     }
 
-    @Override
     public List<Expense> getExpensesByUser(int userId) {
-        List<Expense> list = new ArrayList<>();
+        List<Expense> expensesList = new ArrayList<>();
 
-        try {
-            QuerySnapshot snapshot = db.collection("expenses")
-                    .whereEqualTo("userId", userId)   // NUMBER match
-                    .get()
-                    .get();
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement stmt = con.prepareStatement(SELECT_BY_USER)) {
 
-            for (DocumentSnapshot doc : snapshot.getDocuments()) {
-                list.add(fromFirestore(doc));
+            stmt.setInt(1, userId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+
+                while (rs.next()) {
+                    Expense expense = new Expense();
+
+                    expense.setExpenseId(rs.getInt("expense_id"));
+                    expense.setUserId(rs.getInt("user_id"));
+                    expense.setExpenseDate(rs.getDate("expense_date").toLocalDate());
+                    expense.setAmount(rs.getBigDecimal("amount"));
+                    expense.setCategory(rs.getString("category"));
+                    expense.setDescription(rs.getString("description"));
+
+                    expensesList.add(expense);
+                }
             }
-        } catch (InterruptedException | ExecutionException ex) {
-            ex.printStackTrace();
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-        return list;
+        return expensesList;
     }
 
     @Override
     public void deleteExpense(int expenseId) {
-        try {
-            db.collection("expenses")
-                    .document(String.valueOf(expenseId))
-                    .delete()
-                    .get();
-        } catch (InterruptedException | ExecutionException ex) {
-            ex.printStackTrace();
+        try(Connection con = DBConnection.getConnection();
+            PreparedStatement stmt = con.prepareStatement(DELETE_EXPENSE)) {
+            stmt.setInt(1, expenseId);
+
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 
-    /* =========================
-       TOTAL CALCULATION HELPERS
-       ========================= */
-
-    private BigDecimal getExpenseTotalByUserAndDate(int userId, LocalDate from, LocalDate to) {
+    @Override
+    public BigDecimal getDayWiseExpenseTotal(int userId, LocalDate fdate, LocalDate tdate) {
         BigDecimal total = BigDecimal.ZERO;
 
-        try {
-            QuerySnapshot snapshot = db.collection("expenses")
-                    .whereEqualTo("userId", userId)
-                    .get()
-                    .get();
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement stmt = con.prepareStatement(DAY_WISE)) {
 
-            for (DocumentSnapshot doc : snapshot.getDocuments()) {
-                Expense e = fromFirestore(doc);
+            stmt.setInt(1, userId);
+            stmt.setDate(2, Date.valueOf(fdate));
+            stmt.setDate(3, Date.valueOf(tdate));
 
-                if ((e.getExpenseDate().isEqual(from) || e.getExpenseDate().isAfter(from)) &&
-                        e.getExpenseDate().isBefore(to.plusDays(1))) {
-                    total = total.add(e.getAmount());
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    total = rs.getBigDecimal(1);
                 }
             }
-        } catch (InterruptedException | ExecutionException ex) {
-            ex.printStackTrace();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
 
         return total;
     }
 
-    /* =========================
-       INTERFACE METHODS
-       ========================= */
-
-    @Override
-    public BigDecimal getDayWiseExpenseTotal(int userId, LocalDate fdate, LocalDate tdate) {
-        return getExpenseTotalByUserAndDate(userId, fdate, tdate);
-    }
-
     @Override
     public BigDecimal getMonthWiseExpenseTotal(int userId, LocalDate fdate, LocalDate tdate) {
-        return getExpenseTotalByUserAndDate(userId, fdate, tdate);
+        BigDecimal total = BigDecimal.ZERO;
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement stmt = con.prepareStatement(MONTH_WISE)) {
+
+            stmt.setInt(1, userId);
+            stmt.setDate(2, Date.valueOf(fdate));
+            stmt.setDate(3, Date.valueOf(tdate));
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    total = rs.getBigDecimal(1);
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return total;
     }
 
     @Override
     public BigDecimal getYearWiseExpenseTotal(int userId, LocalDate fdate, LocalDate tdate) {
-        return getExpenseTotalByUserAndDate(userId, fdate, tdate);
+        BigDecimal total = BigDecimal.ZERO;
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement stmt = con.prepareStatement(YEAR_WISE)) {
+
+            stmt.setInt(1, userId);
+            stmt.setDate(2, Date.valueOf(fdate));
+            stmt.setDate(3, Date.valueOf(tdate));
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    total = rs.getBigDecimal(1);
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return total;
     }
 
     @Override
     public BigDecimal todaysExpense(int userId) {
-        LocalDate today = LocalDate.now();
-        return getExpenseTotalByUserAndDate(userId, today, today);
+        BigDecimal total = BigDecimal.ZERO;
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement stmt = con.prepareStatement(TODAY_EXPENSE)) {
+
+            stmt.setInt(1, userId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    total = rs.getBigDecimal(1);
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return total;
     }
 
     @Override
     public BigDecimal yesterdayExpense(int userId) {
-        LocalDate yesterday = LocalDate.now().minusDays(1);
-        return getExpenseTotalByUserAndDate(userId, yesterday, yesterday);
+        BigDecimal total = BigDecimal.ZERO;
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement stmt = con.prepareStatement(YESTERDAY_EXPENSE)) {
+
+            stmt.setInt(1, userId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    total = rs.getBigDecimal(1);
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return total;
     }
 
     @Override
     public BigDecimal weekExpense(int userId) {
-        LocalDate today = LocalDate.now();
-        return getExpenseTotalByUserAndDate(userId, today.minusDays(6), today);
+        BigDecimal total = BigDecimal.ZERO;
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement stmt = con.prepareStatement(WEEK_EXPENSE)) {
+
+            stmt.setInt(1, userId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    total = rs.getBigDecimal(1);
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return total;
     }
 
     @Override
     public BigDecimal monthExpense(int userId) {
-        LocalDate now = LocalDate.now();
-        return getExpenseTotalByUserAndDate(userId, now.withDayOfMonth(1), now);
+        BigDecimal total = BigDecimal.ZERO;
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement stmt = con.prepareStatement(MONTH_EXPENSE)) {
+
+            stmt.setInt(1, userId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    total = rs.getBigDecimal(1);
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return total;
     }
 
     @Override
     public BigDecimal yearExpense(int userId) {
-        LocalDate now = LocalDate.now();
-        return getExpenseTotalByUserAndDate(userId, now.withDayOfYear(1), now);
+        BigDecimal total = BigDecimal.ZERO;
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement stmt = con.prepareStatement(YEAR_EXPENSE)) {
+
+            stmt.setInt(1, userId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    total = rs.getBigDecimal(1);
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return total;
     }
 
     @Override
     public BigDecimal totalExpense(int userId) {
-        return getExpenseTotalByUserAndDate(
-                userId,
-                LocalDate.of(1970, 1, 1),
-                LocalDate.now()
-        );
+        BigDecimal total = BigDecimal.ZERO;
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement stmt = con.prepareStatement(TOTAL_EXPENSE)) {
+
+            stmt.setInt(1, userId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    total = rs.getBigDecimal(1);
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return total;
     }
 
-    /* =========================
-       FIRESTORE MAPPERS
-       ========================= */
-
-    private Expense fromFirestore(DocumentSnapshot doc) {
-        Expense e = new Expense();
-
-        e.setExpenseId(doc.getLong("expenseId").intValue());
-        e.setUserId(doc.getLong("userId").intValue());
-
-        String isoDate = doc.getString("expenseDate");
-        e.setExpenseDate(OffsetDateTime.parse(isoDate).toLocalDate());
-
-        e.setAmount(new BigDecimal(doc.get("amount").toString()));
-        e.setCategory(doc.getString("category"));
-        e.setDescription(doc.getString("description"));
-
-        return e;
-    }
-
-    private Object toFirestoreObject(Expense e) {
-        return new Object() {
-            public final int expenseId = e.getExpenseId();
-            public final int userId = e.getUserId();
-            public final String expenseDate = e.getExpenseDate().toString() + "T00:00:00.000Z";
-            public final BigDecimal amount = e.getAmount();
-            public final String category = e.getCategory();
-            public final String description = e.getDescription();
-            public final String createdAt = OffsetDateTime.now().toString();
-        };
-    }
 }
