@@ -11,17 +11,6 @@
         <link rel="stylesheet" href="<c:url value='/css/bootstrap.min.css'/>">
         <link rel="stylesheet" href="<c:url value='/css/datepicker3.css'/>">
         <link rel="stylesheet" href="<c:url value='/css/styles.css'/>">
-
-        <script>
-            function checkpass() {
-                if (document.changepassword.newpassword.value !== document.changepassword.confirmpassword.value) {
-                    alert("New Password and Confirm Password do not match");
-                    document.changepassword.confirmpassword.focus();
-                    return false;
-                }
-                return true;
-            }
-        </script>
     </head>
 
     <body>
@@ -38,18 +27,10 @@
 
                 <div class="panel-body">
 
-                    <%
-                        String error = request.getParameter("error");
-                        if ("1".equals(error)) {
-                    %>
-                        <div class="alert alert-danger text-center">
-                            Password update failed
-                        </div>
-                    <%
-                        }
-                    %>
+                    <div id="errorMsg" class="alert alert-danger text-center" style="display:none;"></div>
+                    <div id="successMsg" class="alert alert-success text-center" style="display:none;"></div>
 
-                    <form name="changepassword" method="post" action="user?action=reset" onsubmit="return checkpass();">
+                    <form name="changepassword" id="changepassword">
 
                         <fieldset>
 
@@ -89,9 +70,55 @@
     </div>
 
 
-        <script src="<c:url value='/js/jquery-1.11.1.min.js'/>"></script>
-        <script src="<c:url value='/js/bootstrap.min.js'/>"></script>
-        <script src="<c:url value='/js/easypiechart.js'/>"></script>
-        <script src="<c:url value='/js/easypiechart-data.js'/>"></script>
+    <script src="<c:url value='/js/jquery-1.11.1.min.js'/>"></script>
+    <script src="<c:url value='/js/bootstrap.min.js'/>"></script>
+
+    <script>
+        document.getElementById('changepassword').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const newPass = this.newpassword.value;
+            const confirmPass = this.confirmpassword.value;
+
+            const errorDiv = document.getElementById('errorMsg');
+            const successDiv = document.getElementById('successMsg');
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+
+            if (newPass !== confirmPass) {
+                errorDiv.textContent = "New Password and Confirm Password do not match";
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch('<c:url value="/api/auth/reset"/>', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: newPass })
+                });
+
+                const data = await response.json().catch(() => ({}));
+
+                if (response.ok) {
+                    successDiv.textContent = data.message || "Password has been reset successfully.";
+                    successDiv.style.display = 'block';
+                    this.reset();
+                    setTimeout(() => window.location.href = 'index.jsp', 2000);
+                } else if (response.status === 401) {
+                    errorDiv.textContent = data.error || "Session expired. Please login again.";
+                    errorDiv.style.display = 'block';
+                    setTimeout(() => window.location.href = 'index.jsp', 2000);
+                } else {
+                    errorDiv.textContent = data.error || "Password reset failed. Try again.";
+                    errorDiv.style.display = 'block';
+                }
+
+            } catch (err) {
+                errorDiv.textContent = "Network error. Please try again.";
+                errorDiv.style.display = 'block';
+            }
+        });
+    </script>
     </body>
 </html>
