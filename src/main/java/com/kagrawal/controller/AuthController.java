@@ -120,41 +120,47 @@ public class AuthController extends HttpServlet {
         resp.getWriter().write(mapper.writeValueAsString(json));
     }
 
-    // ================= FORGOT PASSWORD =================
     private void forgotPassword(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String email = req.getParameter("email");
-        String mobileParam = req.getParameter("mobile");
+        resp.setContentType("application/json");
+
+        Map<String, String> body = mapper.readValue(req.getInputStream(), Map.class);
+        String email = body.get("email");
+        String mobileParam = body.get("mobile");
         Long mobile = (mobileParam != null && !mobileParam.isEmpty()) ? Long.parseLong(mobileParam) : null;
 
         User user = userDAO.validateUserForResetPassword(email, mobile);
 
         if (user != null) {
-            HttpSession session = req.getSession(true);
-            session.setAttribute("resetUserId", user.getUserId());
-            resp.sendRedirect(req.getContextPath() + "/reset-password.jsp");
+            Map<String, Object> json = new HashMap<>();
+            json.put("userId", user.getUserId());
+            json.put("message", "User verified. Proceed to reset password.");
+            resp.setStatus(HttpServletResponse.SC_OK);
+            resp.getWriter().write(mapper.writeValueAsString(json));
         } else {
-            resp.sendRedirect(req.getContextPath() + "/index.jsp?error=2");
+            resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            resp.getWriter().write("{\"error\":\"Invalid email or mobile.\"}");
         }
     }
 
+
+
     // ================= RESET PASSWORD =================
     private void resetPassword(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        HttpSession session = req.getSession(false);
-        if (session == null || session.getAttribute("resetUserId") == null) {
-            resp.sendRedirect(req.getContextPath() + "/reset-password.jsp");
-            return;
-        }
+        resp.setContentType("application/json");
 
-        int userId = (int) session.getAttribute("resetUserId");
-        String newPassword = req.getParameter("newpassword");
+        // Read JSON body
+        Map<String, String> body = mapper.readValue(req.getInputStream(), Map.class);
+        String newPassword = body.get("password");
+        int userId = Integer.parseInt(body.get("userId")); // receive from JS
 
         boolean updated = userDAO.updatePassword(userId, newPassword);
 
         if (updated) {
-            session.invalidate();
-            resp.sendRedirect(req.getContextPath() + "/index.jsp");
+            resp.setStatus(HttpServletResponse.SC_OK);
+            resp.getWriter().write("{\"message\":\"Password updated successfully.\"}");
         } else {
-            resp.sendRedirect(req.getContextPath() + "/reset-password.jsp?error=3");
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            resp.getWriter().write("{\"error\":\"Failed to update password.\"}");
         }
     }
 

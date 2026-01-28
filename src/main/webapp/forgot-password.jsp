@@ -57,6 +57,8 @@
             successDiv.style.display = 'none';
 
             if (response.ok) {
+                const data = await response.json();
+                sessionStorage.setItem("resetUserId", data.userId);
                 window.location.href = 'reset-password.jsp';
             } else {
                 const data = await response.json().catch(() => ({}));

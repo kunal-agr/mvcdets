@@ -74,9 +74,11 @@
     <script src="<c:url value='/js/bootstrap.min.js'/>"></script>
 
     <script>
+        // Assume userId was saved in sessionStorage from forgot step
+        const userId = sessionStorage.getItem("resetUserId");
+
         document.getElementById('changepassword').addEventListener('submit', async function(e) {
             e.preventDefault();
-
             const newPass = this.newpassword.value;
             const confirmPass = this.confirmpassword.value;
 
@@ -95,22 +97,18 @@
                 const response = await fetch('<c:url value="/api/auth/reset"/>', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password: newPass })
+                    body: JSON.stringify({ password: newPass, userId: userId })
                 });
 
                 const data = await response.json().catch(() => ({}));
 
                 if (response.ok) {
-                    successDiv.textContent = data.message || "Password has been reset successfully.";
+                    successDiv.textContent = data.message;
                     successDiv.style.display = 'block';
                     this.reset();
                     setTimeout(() => window.location.href = 'index.jsp', 2000);
-                } else if (response.status === 401) {
-                    errorDiv.textContent = data.error || "Session expired. Please login again.";
-                    errorDiv.style.display = 'block';
-                    setTimeout(() => window.location.href = 'index.jsp', 2000);
                 } else {
-                    errorDiv.textContent = data.error || "Password reset failed. Try again.";
+                    errorDiv.textContent = data.error || "Password reset failed.";
                     errorDiv.style.display = 'block';
                 }
 
@@ -119,6 +117,7 @@
                 errorDiv.style.display = 'block';
             }
         });
+
     </script>
     </body>
 </html>
