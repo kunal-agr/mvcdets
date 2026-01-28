@@ -1,5 +1,4 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
-<%@ page import="java.util.*, com.kagrawal.model.Expense" %>
 <%
     Integer userId = null;
     String username = "User";
@@ -14,17 +13,10 @@
     }
 
     if (userId == null) {
-        response.sendRedirect("user?action=logout");
+        response.sendRedirect("index.jsp");
         return;
     }
 
-    if (request.getAttribute("expenses") == null) {
-        RequestDispatcher rd = request.getRequestDispatcher("expense?action=manage");
-        rd.forward(request, response);
-        return;
-    }
-
-    List<Expense> list = (List<Expense>) request.getAttribute("expenses");
     String msg = request.getParameter("msg");
 %>
 
@@ -40,18 +32,11 @@
         <link href="css/datepicker3.css" rel="stylesheet">
         <link href="css/styles.css" rel="stylesheet">
     </head>
-
     <body>
 
     <nav class="navbar navbar-custom navbar-fixed-top" role="navigation">
         <div class="container-fluid">
             <div class="navbar-header">
-                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#sidebar-collapse">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
                 <a class="navbar-brand" href="dashboard.jsp"><span>Daily Expense Tracker</span></a>
             </div>
         </div>
@@ -73,7 +58,6 @@
 
         <ul class="nav menu">
             <li><a href="dashboard.jsp"><em class="fa fa-dashboard">&nbsp;</em> Dashboard</a></li>
-
             <li class="parent active">
                 <a data-toggle="collapse" href="#sub-item-1" class="collapsed">
                     <em class="fa fa-navicon">&nbsp;</em>Expenses
@@ -86,7 +70,6 @@
                     <li class="active"><a href="manage-expense.jsp"><span class="fa fa-arrow-right">&nbsp;</span> Manage Expenses</a></li>
                 </ul>
             </li>
-
             <li class="parent">
                 <a data-toggle="collapse" href="#sub-item-2" class="collapsed">
                     <em class="fa fa-navicon">&nbsp;</em>Expense Report
@@ -100,10 +83,13 @@
                     <li><a href="expense-yearwise-reports.jsp"><span class="fa fa-arrow-right">&nbsp;</span> Yearwise Expenses</a></li>
                 </ul>
             </li>
-
             <li><a href="user-profile.jsp"><em class="fa fa-user">&nbsp;</em> Profile</a></li>
             <li><a href="change-password.jsp"><em class="fa fa-clone">&nbsp;</em> Change Password</a></li>
-            <li><a href="user?action=logout"><em class="fa fa-power-off">&nbsp;</em> Logout</a></li>
+            <li>
+                <a href="#" onclick="logout()">
+                    <em class="fa fa-power-off">&nbsp;</em> Logout
+                </a>
+            </li>
         </ul>
     </div>
 
@@ -118,12 +104,14 @@
         <div class="panel panel-default">
             <div class="panel-heading">Manage Expenses</div>
             <div class="panel-body">
-                <% if (msg != null) { %>
-                    <div class="alert alert-info text-center"><%= msg %></div>
-                <% } %>
+                <div id="msg">
+                    <% if (msg != null) { %>
+                        <div class="alert alert-info text-center"><%= msg %></div>
+                    <% } %>
+                </div>
 
                 <div class="table-responsive">
-                    <table class="table table-bordered table-striped">
+                    <table class="table table-bordered table-striped" id="expenseTable">
                         <thead>
                             <tr>
                                 <th>#</th>
@@ -134,34 +122,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                        <%
-                            if (list != null && !list.isEmpty()) {
-                                int i = 1;
-                                for (Expense e : list) {
-                        %>
-                            <tr>
-                                <td><%= i++ %></td>
-                                <td><%= e.getDescription() %></td>
-                                <td><%= e.getAmount() %></td>
-                                <td><%= e.getExpenseDate() %></td>
-                                <td>
-                                    <a href="expense?action=delete&expenseId=<%= e.getExpenseId() %>"
-                                       class="btn btn-sm btn-danger"
-                                       onclick="return confirm('Do you really want to delete this record?')">
-                                        <em class="fa fa-trash"></em>
-                                    </a>
-                                </td>
-                            </tr>
-                        <%
-                                }
-                            } else {
-                        %>
-                            <tr>
-                                <td colspan="5" class="text-center">No expenses found.</td>
-                            </tr>
-                        <%
-                            }
-                        %>
+                            <!-- Rows will be populated by JS -->
                         </tbody>
                     </table>
                 </div>
@@ -175,5 +136,67 @@
     <script src="js/bootstrap.min.js"></script>
     <script src="js/custom.js"></script>
 
+    <script>
+        async function loadExpenses() {
+            const tbody = document.querySelector('#expenseTable tbody');
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center">Loading...</td></tr>';
+
+            try {
+                const res = await fetch('<%=request.getContextPath()%>/api/expenses');
+                if (!res.ok) throw new Error('Failed to fetch expenses');
+
+                const expenses = await res.json();
+                if (expenses.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center">No expenses found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                expenses.forEach((e, i) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${i + 1}</td>
+                        <td>${e.description}</td>
+                        <td>${e.amount}</td>
+                        <td>${e.expenseDate}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick="deleteExpense(${e.expenseId})">
+                                <em class="fa fa-trash"></em>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch(err) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Error loading expenses</td></tr>`;
+                console.error(err);
+            }
+        }
+
+        async function deleteExpense(expenseId) {
+            if (!confirm('Do you really want to delete this record?')) return;
+            try {
+                const res = await fetch('<%=request.getContextPath()%>/api/expenses/' + expenseId, { method: 'DELETE' });
+                if (!res.ok) throw new Error('Failed to delete expense');
+
+                loadExpenses();
+            } catch(err) {
+                alert('Error deleting expense');
+                console.error(err);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadExpenses);
+    </script>
+    <script>
+        async function logout() {
+            try {
+                await fetch('<%=request.getContextPath()%>/api/auth/logout');
+                window.location.href = 'index.jsp';
+            } catch (e) {
+                alert('Logout failed');
+            }
+        }
+    </script>
     </body>
 </html>
