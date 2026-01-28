@@ -52,6 +52,7 @@ public class AuthController extends HttpServlet {
                 break;
             case "/logout":
                 logout(req,resp);
+                break;
             default:
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
         }
@@ -141,9 +142,6 @@ public class AuthController extends HttpServlet {
             resp.getWriter().write("{\"error\":\"Invalid email or mobile.\"}");
         }
     }
-
-
-
     // ================= RESET PASSWORD =================
     private void resetPassword(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         resp.setContentType("application/json");
