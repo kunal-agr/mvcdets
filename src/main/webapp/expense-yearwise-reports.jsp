@@ -1,8 +1,7 @@
-<%@ page import="java.sql.*, javax.servlet.*, javax.servlet.http.*" %>
-
+<%@ page import="javax.servlet.http.*, javax.servlet.*" %>
 <%
     if (session == null || session.getAttribute("userId") == null) {
-        response.sendRedirect("user?action=logout");
+        response.sendRedirect("index.jsp");
         return;
     }
 
@@ -46,7 +45,7 @@
     <div id="sidebar-collapse" class="col-sm-3 col-lg-2 sidebar">
         <div class="profile-sidebar">
             <div class="profile-userpic">
-                <img src="http://placehold.it/50/30a5ff/fff" class="img-responsive" alt="">
+                <img src="http://placehold.it/50/30a5ff/fff" class="img-responsive">
             </div>
             <div class="profile-usertitle">
                 <div class="profile-usertitle-name"><%= username %></div>
@@ -60,18 +59,12 @@
         <div class="divider"></div>
 
         <ul class="nav menu">
-            <li>
-                <a href="dashboard.jsp">
-                    <em class="fa fa-dashboard">&nbsp;</em> Dashboard
-                </a>
-            </li>
+            <li><a href="dashboard.jsp"><em class="fa fa-dashboard">&nbsp;</em> Dashboard</a></li>
 
             <li class="parent">
                 <a data-toggle="collapse" href="#sub-item-1">
                     <em class="fa fa-navicon">&nbsp;</em>Expenses
-                    <span data-toggle="collapse" href="#sub-item-1" class="icon pull-right">
-                        <em class="fa fa-plus"></em>
-                    </span>
+                    <span class="icon pull-right"><em class="fa fa-plus"></em></span>
                 </a>
                 <ul class="children collapse" id="sub-item-1">
                     <li><a href="add-expense.jsp"><span class="fa fa-arrow-right">&nbsp;</span> Add Expenses</a></li>
@@ -82,9 +75,7 @@
             <li class="parent">
                 <a data-toggle="collapse" href="#sub-item-2">
                     <em class="fa fa-navicon">&nbsp;</em>Expense Report
-                    <span data-toggle="collapse" href="#sub-item-2" class="icon pull-right">
-                        <em class="fa fa-plus"></em>
-                    </span>
+                    <span class="icon pull-right"><em class="fa fa-plus"></em></span>
                 </a>
                 <ul class="children collapse" id="sub-item-2">
                     <li><a href="expense-datewise-reports.jsp"><span class="fa fa-arrow-right">&nbsp;</span> Daywise Expenses</a></li>
@@ -95,7 +86,11 @@
 
             <li><a href="user-profile.jsp"><em class="fa fa-user">&nbsp;</em> Profile</a></li>
             <li><a href="change-password.jsp"><em class="fa fa-clone">&nbsp;</em> Change Password</a></li>
-            <li><a href="user?action=logout"><em class="fa fa-power-off">&nbsp;</em> Logout</a></li>
+            <li>
+                <a href="#" onclick="logout()">
+                    <em class="fa fa-power-off">&nbsp;</em> Logout
+                </a>
+            </li>
         </ul>
     </div>
 
@@ -110,15 +105,15 @@
         <div class="panel panel-default">
             <div class="panel-heading">Yearwise Expense Report</div>
             <div class="panel-body">
-                <form role="form" method="post" action="expense?action=yearexpense">
+                <form id="yearwiseForm">
                     <div class="form-group">
                         <label>From Date</label>
-                        <input type="date" class="form-control" name="fromYear" required>
+                        <input type="date" class="form-control" name="fromdate" required>
                     </div>
 
                     <div class="form-group">
                         <label>To Date</label>
-                        <input type="date" class="form-control" name="toYear" required>
+                        <input type="date" class="form-control" name="todate" required>
                     </div>
 
                     <button type="submit" class="btn btn-primary">Submit</button>
@@ -133,5 +128,34 @@
     <script src="js/bootstrap.min.js"></script>
     <script src="js/custom.js"></script>
 
+    <script>
+        document.getElementById("yearwiseForm").addEventListener("submit", function(e) {
+            e.preventDefault();
+
+            const fromDate = this.fromdate.value;
+            const toDate = this.todate.value;
+
+            fetch('<%= request.getContextPath() %>/api/expenses/year?fromdate=' + fromDate + '&todate=' + toDate)
+                .then(res => {
+                    if (!res.ok) throw new Error("Failed to fetch data");
+                    return res.json();
+                })
+                .then(data => {
+                    sessionStorage.setItem("yearwiseResult", JSON.stringify(data));
+                    window.location.href = "expense-yearwise-result.jsp";
+                })
+                .catch(err => alert("Error fetching data: " + err.message));
+        });
+    </script>
+    <script>
+        async function logout() {
+            try {
+                await fetch('<%=request.getContextPath()%>/api/auth/logout');
+                window.location.href = 'index.jsp';
+            } catch (e) {
+                alert('Logout failed');
+            }
+        }
+    </script>
     </body>
 </html>
