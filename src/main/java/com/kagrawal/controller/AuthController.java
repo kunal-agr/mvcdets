@@ -186,7 +186,6 @@ public class AuthController extends HttpServlet {
         resp.getWriter().write(mapper.writeValueAsString(json));
     }
 
-
     private void logout(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
