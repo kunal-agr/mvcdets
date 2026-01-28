@@ -2,7 +2,6 @@ package com.kagrawal.dao;
 
 import com.google.cloud.firestore.*;
 import com.kagrawal.model.Expense;
-import com.kagrawal.util.FirebaseUtil;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
