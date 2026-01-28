@@ -16,12 +16,13 @@ public class ApiFilter implements Filter {
         HttpServletResponse res = (HttpServletResponse) response;
 
         String uri = req.getRequestURI();
+        System.out.println("Request URI: " + uri);
 
-        // allow unauthenticated access for login, register, and forgot password/reset
-        if (uri.endsWith("/api/auth/login") ||
-                uri.endsWith("/api/auth/register") ||
-                uri.endsWith("/api/auth/forgot") ||
-                uri.endsWith("/api/auth/reset")) {
+        // allow unauthenticated access for login, register, forgot, reset
+        if (uri.contains("/api/auth/login") ||
+                uri.contains("/api/auth/register") ||
+                uri.contains("/api/auth/forgot") ||
+                uri.contains("/api/auth/reset")) {
             chain.doFilter(request, response);
             return;
         }

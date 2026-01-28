@@ -75,6 +75,8 @@ public class AuthController extends HttpServlet {
             HttpSession session = req.getSession(true);
             session.setAttribute("user", user);
             session.setAttribute("userName", user.getName());
+            session.setAttribute("userId", user.getUserId());  // <--- ADD THIS
+
             resp.setStatus(HttpServletResponse.SC_OK);
             json.put("message", "Login successful");
             json.put("userId", user.getUserId());
