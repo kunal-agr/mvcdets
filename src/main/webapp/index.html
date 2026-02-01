@@ -72,6 +72,7 @@
     const form = document.getElementById("loginForm");
     const messageBox = document.getElementById("messageBox");
 
+    // 1. Logic to handle URL parameters (remains the same)
     window.onload = function() {
         const urlParams = new URLSearchParams(window.location.search);
         const success = urlParams.get('success');
@@ -94,6 +95,7 @@
         messageBox.style.display = "block";
     }
 
+    // 2. Login function with the specific fix for Dashboard/Profile
     form.addEventListener("submit", function (e) {
         e.preventDefault();
         loginUser();
@@ -108,18 +110,20 @@
         fetch("api/auth/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            credentials: "include",
+            credentials: "include", // Essential for keeping session cookies
             body: JSON.stringify({ email, password })
         })
         .then(async res => {
-            // Parse the JSON data from the response
             const data = await res.json();
 
             if (res.status === 200) {
-                // --- THE CRITICAL FIX IS HERE ---
-                // We save the user info so change-password.html can see it.
-                sessionStorage.setItem("userId", data.userId);
-                sessionStorage.setItem("userName", data.name || "User");
+                // --- THE CRITICAL FIX ---
+                // We check if the name is inside a 'user' object or top-level
+                const userData = data.user || data;
+
+                // Save exactly what dashboard.html and user-profile.html expect
+                sessionStorage.setItem("userId", userData.userId || userData.id);
+                sessionStorage.setItem("userName", userData.name || userData.fullname || "User");
 
                 window.location.href = "dashboard.html";
             } else if (res.status === 401) {

@@ -103,7 +103,6 @@
         </div>
     </div>
 
-    <!-- SUMMARY PANELS -->
     <div class="row">
         <div class="col-xs-6 col-md-3">
             <div class="panel panel-default">
@@ -184,19 +183,34 @@
 <script>
     const API_BASE = "/MVC_DETS/api";
 
-    async function checkAuth() {
-        const res = await fetch(API_BASE + "/user/profile", {
-            credentials: "include"
-        });
-
-        if (res.status === 401) {
-            window.location.replace("index.html");
-            return;
+    // Immediate fix: Load name from sessionStorage while waiting for API
+    function displayCachedName() {
+        const cachedName = sessionStorage.getItem("userName");
+        if (cachedName) {
+            document.getElementById("username").textContent = cachedName;
         }
+    }
 
-        const data = await res.json();
-        if (data.user && data.user.name) {
-            document.getElementById("username").textContent = data.user.name;
+    async function checkAuth() {
+        try {
+            const res = await fetch(API_BASE + "/user/profile", {
+                credentials: "include"
+            });
+
+            if (res.status === 401) {
+                sessionStorage.clear();
+                window.location.replace("index.html");
+                return;
+            }
+
+            const data = await res.json();
+            if (data.user && data.user.name) {
+                document.getElementById("username").textContent = data.user.name;
+                // Update cache if name changed
+                sessionStorage.setItem("userName", data.user.name);
+            }
+        } catch (e) {
+            console.error("Auth check failed:", e);
         }
     }
 
@@ -210,26 +224,32 @@
 
             const data = await res.json();
 
-            todayExpense.textContent = data.today;
-            yesterdayExpense.textContent = data.yesterday;
-            weekExpense.textContent = data.week;
-            monthExpense.textContent = data.month;
-            yearExpense.textContent = data.year;
-            totalExpense.textContent = data.total;
+            // Use '|| 0' to prevent empty strings if data is missing
+            document.getElementById("todayExpense").textContent = data.today || 0;
+            document.getElementById("yesterdayExpense").textContent = data.yesterday || 0;
+            document.getElementById("weekExpense").textContent = data.week || 0;
+            document.getElementById("monthExpense").textContent = data.month || 0;
+            document.getElementById("yearExpense").textContent = data.year || 0;
+            document.getElementById("totalExpense").textContent = data.total || 0;
 
         } catch (e) {
-            console.error(e);
+            console.error("Expense load failed:", e);
         }
     }
 
     async function logout() {
-        await fetch(API_BASE + "/auth/logout", {
-            method: "POST",
-            credentials: "include"
-        });
+        try {
+            await fetch(API_BASE + "/auth/logout", {
+                method: "POST",
+                credentials: "include"
+            });
+        } catch (e) {}
+        sessionStorage.clear();
         window.location.replace("index.html");
     }
 
+    // Execution order
+    displayCachedName();
     checkAuth();
     loadExpenses();
 </script>

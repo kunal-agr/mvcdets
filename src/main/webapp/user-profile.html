@@ -23,7 +23,7 @@
 
     function UserProfileApp() {
         const [user, setUser] = useState({
-            name: '',
+            name: sessionStorage.getItem("userName") || '', // Initial load from storage to prevent empty sidebar
             email: '',
             mobile: '',
             createdAt: ''
@@ -37,30 +37,42 @@
 
         const fetchProfile = async () => {
             try {
-                const res = await fetch(`${API_BASE}/user/profile`);
+                // ADDED credentials: "include" to keep the session alive
+                const res = await fetch(`${API_BASE}/user/profile`, {
+                    credentials: "include"
+                });
+
                 if (res.status === 401) {
                     window.location.replace("index.html");
                     return;
                 }
+
                 const data = await res.json();
                 const userData = data.user;
 
-                // Date formatting logic
-                let raw = userData.createdAt;
-                let date = !isNaN(raw) ? new Date(Number(raw)) : new Date(raw.replace(" ", "T"));
+                if (userData) {
+                    // Date formatting logic
+                    let formattedDate = "";
+                    if (userData.createdAt) {
+                        let raw = userData.createdAt;
+                        let date = !isNaN(raw) ? new Date(Number(raw)) : new Date(raw.replace(" ", "T"));
+                        formattedDate = date.toLocaleDateString("en-IN", {
+                            day: "2-digit",
+                            month: "long",
+                            year: "numeric"
+                        });
+                    }
 
-                const formattedDate = date.toLocaleDateString("en-IN", {
-                    day: "2-digit",
-                    month: "long",
-                    year: "numeric"
-                });
+                    setUser({
+                        name: userData.name || '',
+                        email: userData.email || '',
+                        mobile: userData.mobile || '',
+                        createdAt: formattedDate
+                    });
 
-                setUser({
-                    name: userData.name,
-                    email: userData.email,
-                    mobile: userData.mobile,
-                    createdAt: formattedDate
-                });
+                    // Sync storage so other pages get the updated name
+                    sessionStorage.setItem("userName", userData.name);
+                }
             } catch (err) {
                 console.error("Failed to load profile", err);
             }
@@ -72,6 +84,7 @@
                 const res = await fetch(`${API_BASE}/user/profile`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: "include", // ADDED
                     body: JSON.stringify({
                         fullname: user.name,
                         contactnumber: user.mobile
@@ -81,6 +94,7 @@
                 const data = await res.json();
                 if (res.ok) {
                     setMessage({ text: data.message || "Profile Updated!", type: "success" });
+                    sessionStorage.setItem("userName", user.name); // Update sidebar name immediately
                 } else {
                     setMessage({ text: data.error || "Update failed", type: "danger" });
                 }
@@ -89,8 +103,13 @@
             }
         };
 
-        const logout = async () => {
-            await fetch(`${API_BASE}/auth/logout`, { method: "POST" });
+        const logout = async (e) => {
+            if(e) e.preventDefault();
+            await fetch(`${API_BASE}/auth/logout`, {
+                method: "POST",
+                credentials: "include"
+            });
+            sessionStorage.clear();
             window.location.replace("index.html");
         };
 
@@ -113,7 +132,7 @@
                     </div>
                 </nav>
 
-                {/* SIDEBAR - Structured exactly like dashboard.html */}
+                {/* SIDEBAR */}
                 <div id="sidebar-collapse" className="col-sm-3 col-lg-2 sidebar">
                     <div className="profile-sidebar">
                         <div className="profile-usertitle">
@@ -147,9 +166,9 @@
                                 <span className="icon pull-right"><em className="fa fa-plus"></em></span>
                             </a>
                             <ul className="children collapse" id="sub-item-2">
-                                <li><a href="expense-datewise-reports.html"><span class="fa fa-arrow-right">&nbsp;</span> Daywise Expenses</a></li>
-                                <li><a href="expense-monthwise-reports.html"><span class="fa fa-arrow-right">&nbsp;</span> Monthwise Expenses</a></li>
-                                <li><a href="expense-yearwise-reports.html"><span class="fa fa-arrow-right">&nbsp;</span> Yearwise Expenses</a></li>
+                                <li><a href="expense-datewise-reports.html"><span className="fa fa-arrow-right">&nbsp;</span> Daywise Expenses</a></li>
+                                <li><a href="expense-monthwise-reports.html"><span className="fa fa-arrow-right">&nbsp;</span> Monthwise Expenses</a></li>
+                                <li><a href="expense-yearwise-reports.html"><span className="fa fa-arrow-right">&nbsp;</span> Yearwise Expenses</a></li>
                             </ul>
                         </li>
                         <li className="active">
