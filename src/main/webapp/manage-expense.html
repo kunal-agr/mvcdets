@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Daily Expense Tracker || Manage Expenses</title>
+
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/font-awesome.min.css" rel="stylesheet">
+    <link href="css/datepicker3.css" rel="stylesheet">
+    <link href="css/styles.css" rel="stylesheet">
+
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+
+<script type="text/babel">
+    const { useState, useEffect } = React;
+
+    function ManageExpensesApp() {
+        const [username, setUsername] = useState("User");
+        const [expenses, setExpenses] = useState([]);
+        const [loading, setLoading] = useState(true);
+        const [msg, setMsg] = useState({ text: "", type: "" });
+
+        useEffect(() => {
+            // Initialize user profile data
+            const storedName = sessionStorage.getItem("userName");
+            if (storedName) {
+                setUsername(storedName);
+            } else {
+                // Fallback to API if session storage is cleared
+                fetch('api/user/profile')
+                    .then(res => res.json())
+                    .then(data => {
+                        if(data.user) {
+                            setUsername(data.user.name);
+                            sessionStorage.setItem("userName", data.user.name);
+                        }
+                    })
+                    .catch(() => setUsername("User"));
+            }
+            loadExpenses();
+        }, []);
+
+        const loadExpenses = async () => {
+            setLoading(true);
+            try {
+                const res = await fetch('api/expenses');
+                if (res.ok) {
+                    const data = await res.json();
+                    setExpenses(data);
+                } else if (res.status === 401) {
+                    window.location.href = 'index.html';
+                }
+            } catch (err) {
+                setMsg({ text: "Error loading expenses", type: "danger" });
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        const deleteExpense = async (id) => {
+            if (!confirm('Do you really want to delete this record?')) return;
+            try {
+                const res = await fetch(`api/expenses/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    setMsg({ text: "Expense deleted successfully", type: "info" });
+                    loadExpenses();
+                } else {
+                    alert("Failed to delete expense");
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        const logout = async (e) => {
+            e.preventDefault();
+            try {
+                await fetch('api/auth/logout', { method: 'POST' });
+                sessionStorage.clear();
+                window.location.href = 'index.html';
+            } catch (e) {
+                alert('Logout failed');
+            }
+        };
+
+        return (
+            <div id="wrapper">
+                {/* Top Navigation */}
+                <nav className="navbar navbar-custom navbar-fixed-top" role="navigation">
+                    <div className="container-fluid">
+                        <div className="navbar-header">
+                            <a className="navbar-brand" href="dashboard.html">
+                                <span>Daily Expense Tracker</span>
+                            </a>
+                        </div>
+                    </div>
+                </nav>
+
+                {/* Sidebar */}
+                <div id="sidebar-collapse" className="col-sm-3 col-lg-2 sidebar">
+                    <div className="profile-sidebar">
+                        <div className="profile-usertitle" style={{ marginLeft: '20px', marginTop: '10px' }}>
+                            <div className="profile-usertitle-name">{username}</div>
+                            <div className="profile-usertitle-status">
+                                <span className="indicator label-success"></span>Online
+                            </div>
+                        </div>
+                        <div className="clear"></div>
+                    </div>
+                    <div className="divider"></div>
+                    <ul className="nav menu">
+                        <li><a href="dashboard.html"><em className="fa fa-dashboard">&nbsp;</em> Dashboard</a></li>
+                        <li className="parent active">
+                            <a data-toggle="collapse" href="#sub-item-1">
+                                <em className="fa fa-navicon">&nbsp;</em>Expenses
+                                <span className="icon pull-right"><em className="fa fa-plus"></em></span>
+                            </a>
+                            <ul className="children collapse in" id="sub-item-1">
+                                <li><a href="add-expense.html"><span className="fa fa-arrow-right">&nbsp;</span> Add Expenses</a></li>
+                                <li className="active"><a href="manage-expense.html"><span className="fa fa-arrow-right">&nbsp;</span> Manage Expenses</a></li>
+                            </ul>
+                        </li>
+                        <li className="parent">
+                            <a data-toggle="collapse" href="#sub-item-2">
+                                <em className="fa fa-navicon">&nbsp;</em>Expense Report
+                                <span className="icon pull-right"><em className="fa fa-plus"></em></span>
+                            </a>
+                            <ul className="children collapse" id="sub-item-2">
+                                <li><a href="expense-datewise-reports.html"><span className="fa fa-arrow-right">&nbsp;</span> Daywise Expenses</a></li>
+                                <li><a href="expense-monthwise-reports.html"><span className="fa fa-arrow-right">&nbsp;</span> Monthwise Expenses</a></li>
+                                <li><a href="expense-yearwise-reports.html"><span className="fa fa-arrow-right">&nbsp;</span> Yearwise Expenses</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="user-profile.html"><em className="fa fa-user">&nbsp;</em> Profile</a></li>
+                        <li><a href="change-password.html"><em className="fa fa-clone">&nbsp;</em> Change Password</a></li>
+                        <li><a href="#" onClick={logout}><em className="fa fa-power-off">&nbsp;</em> Logout</a></li>
+                    </ul>
+                </div>
+
+                {/* Main Section */}
+                <div className="col-sm-9 col-sm-offset-3 col-lg-10 col-lg-offset-2 main">
+                    <div className="row">
+                        <ol className="breadcrumb">
+                            <li><a href="dashboard.html"><em className="fa fa-home"></em></a></li>
+                            <li className="active">Manage Expenses</li>
+                        </ol>
+                    </div>
+
+                    <div className="panel panel-default">
+                        <div className="panel-heading">Manage Expenses</div>
+                        <div className="panel-body">
+
+                            {msg.text && (
+                                <div className={`alert alert-${msg.type} text-center`}>{msg.text}</div>
+                            )}
+
+                            <div className="table-responsive">
+                                <table className="table table-bordered table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Description</th>
+                                            <th>Amount</th>
+                                            <th>Date</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {loading ? (
+                                            <tr><td colSpan="5" className="text-center">Loading...</td></tr>
+                                        ) : expenses.length === 0 ? (
+                                            <tr><td colSpan="5" className="text-center">No expenses found.</td></tr>
+                                        ) : (
+                                            expenses.map((e, index) => (
+                                                <tr key={e.expenseId}>
+                                                    <td>{index + 1}</td>
+                                                    <td>{e.description}</td>
+                                                    <td>{e.amount}</td>
+                                                    <td>{e.expenseDate}</td>
+                                                    <td>
+                                                        <button
+                                                            className="btn btn-sm btn-danger"
+                                                            onClick={() => deleteExpense(e.expenseId)}
+                                                        >
+                                                            <em className="fa fa-trash"></em>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="row">
+                        <div className="col-sm-12">
+                            <p className="back-link">Daily Expense Tracker</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<ManageExpensesApp />);
+</script>
+</body>
+</html>
