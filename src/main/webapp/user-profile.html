@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Daily Expense Tracker || User Profile</title>
+
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/font-awesome.min.css" rel="stylesheet">
+    <link href="css/datepicker3.css" rel="stylesheet">
+    <link href="css/styles.css" rel="stylesheet">
+
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+    const { useState, useEffect } = React;
+
+    function UserProfileApp() {
+        const [user, setUser] = useState({
+            name: '',
+            email: '',
+            mobile: '',
+            createdAt: ''
+        });
+        const [message, setMessage] = useState({ text: '', type: '' });
+        const API_BASE = "/MVC_DETS/api";
+
+        useEffect(() => {
+            fetchProfile();
+        }, []);
+
+        const fetchProfile = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/user/profile`);
+                if (res.status === 401) {
+                    window.location.replace("index.html");
+                    return;
+                }
+                const data = await res.json();
+                const userData = data.user;
+
+                // Date formatting logic
+                let raw = userData.createdAt;
+                let date = !isNaN(raw) ? new Date(Number(raw)) : new Date(raw.replace(" ", "T"));
+
+                const formattedDate = date.toLocaleDateString("en-IN", {
+                    day: "2-digit",
+                    month: "long",
+                    year: "numeric"
+                });
+
+                setUser({
+                    name: userData.name,
+                    email: userData.email,
+                    mobile: userData.mobile,
+                    createdAt: formattedDate
+                });
+            } catch (err) {
+                console.error("Failed to load profile", err);
+            }
+        };
+
+        const handleUpdate = async (e) => {
+            e.preventDefault();
+            try {
+                const res = await fetch(`${API_BASE}/user/profile`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fullname: user.name,
+                        contactnumber: user.mobile
+                    })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    setMessage({ text: data.message || "Profile Updated!", type: "success" });
+                } else {
+                    setMessage({ text: data.error || "Update failed", type: "danger" });
+                }
+            } catch (err) {
+                setMessage({ text: "Network error", type: "danger" });
+            }
+        };
+
+        const logout = async () => {
+            await fetch(`${API_BASE}/auth/logout`, { method: "POST" });
+            window.location.replace("index.html");
+        };
+
+        return (
+            <div>
+                {/* NAVBAR */}
+                <nav className="navbar navbar-custom navbar-fixed-top" role="navigation">
+                    <div className="container-fluid">
+                        <div className="navbar-header">
+                            <button type="button" className="navbar-toggle collapsed" data-toggle="collapse" data-target="#sidebar-collapse">
+                                <span className="sr-only">Toggle navigation</span>
+                                <span className="icon-bar"></span>
+                                <span className="icon-bar"></span>
+                                <span className="icon-bar"></span>
+                            </button>
+                            <a className="navbar-brand" href="dashboard.html">
+                                <span>Daily Expense Tracker</span>
+                            </a>
+                        </div>
+                    </div>
+                </nav>
+
+                {/* SIDEBAR - Structured exactly like dashboard.html */}
+                <div id="sidebar-collapse" className="col-sm-3 col-lg-2 sidebar">
+                    <div className="profile-sidebar">
+                        <div className="profile-usertitle">
+                            <div className="profile-usertitle-name">{user.name || "User"}</div>
+                            <div className="profile-usertitle-status">
+                                <span className="indicator label-success"></span>Online
+                            </div>
+                        </div>
+                        <div className="clear"></div>
+                    </div>
+                    <div className="divider"></div>
+                    <ul className="nav menu">
+                        <li>
+                            <a href="dashboard.html">
+                                <em className="fa fa-dashboard">&nbsp;</em> Dashboard
+                            </a>
+                        </li>
+                        <li className="parent">
+                            <a data-toggle="collapse" href="#sub-item-1">
+                                <em className="fa fa-navicon">&nbsp;</em>Expenses
+                                <span className="icon pull-right"><em className="fa fa-plus"></em></span>
+                            </a>
+                            <ul className="children collapse" id="sub-item-1">
+                                <li><a href="add-expense.html"><span className="fa fa-arrow-right">&nbsp;</span> Add Expenses</a></li>
+                                <li><a href="manage-expense.html"><span className="fa fa-arrow-right">&nbsp;</span> Manage Expenses</a></li>
+                            </ul>
+                        </li>
+                        <li className="parent">
+                            <a data-toggle="collapse" href="#sub-item-2">
+                                <em className="fa fa-navicon">&nbsp;</em>Expense Report
+                                <span className="icon pull-right"><em className="fa fa-plus"></em></span>
+                            </a>
+                            <ul className="children collapse" id="sub-item-2">
+                                <li><a href="expense-datewise-reports.html"><span class="fa fa-arrow-right">&nbsp;</span> Daywise Expenses</a></li>
+                                <li><a href="expense-monthwise-reports.html"><span class="fa fa-arrow-right">&nbsp;</span> Monthwise Expenses</a></li>
+                                <li><a href="expense-yearwise-reports.html"><span class="fa fa-arrow-right">&nbsp;</span> Yearwise Expenses</a></li>
+                            </ul>
+                        </li>
+                        <li className="active">
+                            <a href="user-profile.html"><em className="fa fa-user">&nbsp;</em> Profile</a>
+                        </li>
+                        <li>
+                            <a href="change-password.html"><em className="fa fa-clone">&nbsp;</em> Change Password</a>
+                        </li>
+                        <li>
+                            <a href="#" onClick={logout}>
+                                <em className="fa fa-power-off">&nbsp;</em> Logout
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                {/* MAIN CONTENT */}
+                <div className="col-sm-9 col-sm-offset-3 col-lg-10 col-lg-offset-2 main">
+                    <div className="row">
+                        <ol className="breadcrumb">
+                            <li><a href="#"><em className="fa fa-home"></em></a></li>
+                            <li className="active">Profile</li>
+                        </ol>
+                    </div>
+
+                    <div className="row">
+                        <div className="col-lg-12">
+                            <h1 className="page-header">Profile</h1>
+                        </div>
+                    </div>
+
+                    <div className="panel panel-default">
+                        <div className="panel-heading">Update Profile</div>
+                        <div className="panel-body">
+
+                            {message.text && (
+                                <div className={`alert alert-${message.type}`} role="alert">
+                                    {message.text}
+                                </div>
+                            )}
+
+                            <form onSubmit={handleUpdate}>
+                                <div className="form-group">
+                                    <label>Full Name</label>
+                                    <input
+                                        className="form-control"
+                                        value={user.name}
+                                        onChange={(e) => setUser({...user, name: e.target.value})}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Email</label>
+                                    <input className="form-control" value={user.email} readOnly />
+                                </div>
+                                <div className="form-group">
+                                    <label>Mobile Number</label>
+                                    <input
+                                        className="form-control"
+                                        value={user.mobile}
+                                        maxLength="10"
+                                        onChange={(e) => setUser({...user, mobile: e.target.value})}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Registration Date</label>
+                                    <input className="form-control" value={user.createdAt} readOnly />
+                                </div>
+                                <button type="submit" className="btn btn-primary">Update</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<UserProfileApp />);
+</script>
+
+<script src="js/jquery-1.11.1.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+</body>
+</html>
