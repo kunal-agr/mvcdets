@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Daily Expense Tracker || Datewise Expense Report</title>
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/font-awesome.min.css" rel="stylesheet">
+    <link href="css/datepicker3.css" rel="stylesheet">
+    <link href="css/styles.css" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+
+<script type="text/babel">
+    const { useState, useEffect } = React;
+
+    function DatewiseReport() {
+        const [username, setUsername] = useState("User");
+        const [dates, setDates] = useState({ fromdate: "", todate: "" });
+
+        useEffect(() => {
+            const name = sessionStorage.getItem("userName");
+            if (name) setUsername(name);
+        }, []);
+
+        const handleSubmit = async (e) => {
+            e.preventDefault();
+            try {
+                const res = await fetch(`api/expenses/date?fromdate=${dates.fromdate}&todate=${dates.todate}`);
+                if (!res.ok) throw new Error('Unauthorized or Server Error');
+                const data = await res.json();
+                sessionStorage.setItem("datewiseResult", JSON.stringify(data));
+                window.location.href = 'expense-datewise-result.html';
+            } catch (err) {
+                alert("Error fetching data: " + err.message);
+            }
+        };
+
+        const logout = async (e) => {
+            if(e) e.preventDefault();
+            try {
+                await fetch('api/auth/logout', { method: 'POST' });
+                sessionStorage.clear();
+                window.location.href = 'index.html';
+            } catch (err) {
+                alert("Logout failed");
+            }
+        };
+
+        return (
+            <div id="wrapper">
+                <nav className="navbar navbar-custom navbar-fixed-top">
+                    <div className="container-fluid">
+                        <div className="navbar-header">
+                            <a className="navbar-brand" href="dashboard.html"><span>Daily Expense Tracker</span></a>
+                        </div>
+                    </div>
+                </nav>
+
+                <div id="sidebar-collapse" className="col-sm-3 col-lg-2 sidebar">
+                    <div className="profile-sidebar">
+                        <div className="profile-usertitle" style={{ marginLeft: '20px', marginTop: '10px' }}>
+                            <div className="profile-usertitle-name">{username}</div>
+                            <div className="profile-usertitle-status"><span className="indicator label-success"></span>Online</div>
+                        </div>
+                        <div className="clear"></div>
+                    </div>
+                    <div className="divider"></div>
+
+                    {/* FULL MENU LIST */}
+                    <ul className="nav menu">
+                        <li><a href="dashboard.html"><em className="fa fa-dashboard">&nbsp;</em> Dashboard</a></li>
+                        <li className="parent">
+                            <a data-toggle="collapse" href="#sub-item-1">
+                                <em className="fa fa-navicon">&nbsp;</em>Expenses <span className="icon pull-right"><em className="fa fa-plus"></em></span>
+                            </a>
+                            <ul className="children collapse" id="sub-item-1">
+                                <li><a href="add-expense.html"><span className="fa fa-arrow-right">&nbsp;</span> Add Expenses</a></li>
+                                <li><a href="manage-expense.html"><span className="fa fa-arrow-right">&nbsp;</span> Manage Expenses</a></li>
+                            </ul>
+                        </li>
+                        <li className="parent active">
+                            <a data-toggle="collapse" href="#sub-item-2">
+                                <em className="fa fa-navicon">&nbsp;</em>Expense Report <span className="icon pull-right"><em className="fa fa-plus"></em></span>
+                            </a>
+                            <ul className="children collapse in" id="sub-item-2">
+                                <li className="active"><a href="expense-datewise-reports.html"><span className="fa fa-arrow-right">&nbsp;</span> Daywise Expenses</a></li>
+                                <li><a href="expense-monthwise-reports.html"><span className="fa fa-arrow-right">&nbsp;</span> Monthwise Expenses</a></li>
+                                <li><a href="expense-yearwise-reports.html"><span className="fa fa-arrow-right">&nbsp;</span> Yearwise Expenses</a></li>
+                            </ul>
+                        </li>
+                        {/* RESTORED LINKS */}
+                        <li><a href="user-profile.html"><em className="fa fa-user">&nbsp;</em> Profile</a></li>
+                        <li><a href="change-password.html"><em className="fa fa-clone">&nbsp;</em> Change Password</a></li>
+                        <li><a href="#" onClick={logout}><em className="fa fa-power-off">&nbsp;</em> Logout</a></li>
+                    </ul>
+                </div>
+
+                <div className="col-sm-9 col-sm-offset-3 col-lg-10 col-lg-offset-2 main">
+                    <div className="row">
+                        <ol className="breadcrumb">
+                            <li><a href="dashboard.html"><em className="fa fa-home"></em></a></li>
+                            <li className="active">Datewise Expense Report</li>
+                        </ol>
+                    </div>
+                    <div className="panel panel-default">
+                        <div className="panel-heading">Datewise Expense Report</div>
+                        <div className="panel-body">
+                            <form onSubmit={handleSubmit}>
+                                <div className="form-group">
+                                    <label>From Date</label>
+                                    <input type="date" className="form-control" value={dates.fromdate}
+                                        onChange={(e) => setDates({...dates, fromdate: e.target.value})} required />
+                                </div>
+                                <div className="form-group">
+                                    <label>To Date</label>
+                                    <input type="date" className="form-control" value={dates.todate}
+                                        onChange={(e) => setDates({...dates, todate: e.target.value})} required />
+                                </div>
+                                <button type="submit" className="btn btn-primary">Submit</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<DatewiseReport />);
+</script>
+</body>
+</html>
