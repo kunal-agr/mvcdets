@@ -161,7 +161,6 @@ public class AuthController extends HttpServlet {
             resp.getWriter().write("{\"error\":\"Failed to update password.\"}");
         }
     }
-
     // ================= CHANGE PASSWORD =================
     private void changePassword(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         resp.setContentType("application/json");

@@ -1,29 +1,10 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%
-    Integer userId = null;
-    String username = "User";
-
-    if (session != null) {
-        if (session.getAttribute("userId") != null) {
-            userId = (Integer) session.getAttribute("userId");
-        }
-        if (session.getAttribute("userName") != null) {
-            username = session.getAttribute("userName").toString();
-        }
-    }
-
-    if (userId == null) {
-        response.sendRedirect("index.jsp");
-        return;
-    }
-%>
-
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
     <title>Daily Expense Tracker - Dashboard</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="css/font-awesome.min.css" rel="stylesheet">
@@ -36,13 +17,14 @@
 <nav class="navbar navbar-custom navbar-fixed-top" role="navigation">
     <div class="container-fluid">
         <div class="navbar-header">
-            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#sidebar-collapse">
+            <button type="button" class="navbar-toggle collapsed"
+                    data-toggle="collapse" data-target="#sidebar-collapse">
                 <span class="sr-only">Toggle navigation</span>
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="dashboard.jsp">
+            <a class="navbar-brand" href="dashboard.html">
                 <span>Daily Expense Tracker</span>
             </a>
         </div>
@@ -52,7 +34,7 @@
 <div id="sidebar-collapse" class="col-sm-3 col-lg-2 sidebar">
     <div class="profile-sidebar">
         <div class="profile-usertitle">
-            <div class="profile-usertitle-name"><%= username %></div>
+            <div class="profile-usertitle-name" id="username">User</div>
             <div class="profile-usertitle-status">
                 <span class="indicator label-success"></span>Online
             </div>
@@ -64,40 +46,44 @@
 
     <ul class="nav menu">
         <li class="active">
-            <a href="dashboard.jsp"><em class="fa fa-dashboard">&nbsp;</em> Dashboard</a>
+            <a href="dashboard.html">
+                <em class="fa fa-dashboard">&nbsp;</em> Dashboard
+            </a>
         </li>
 
         <li class="parent">
             <a data-toggle="collapse" href="#sub-item-1">
                 <em class="fa fa-navicon">&nbsp;</em>Expenses
-                <span data-toggle="collapse" href="#sub-item-1" class="icon pull-right">
+                <span class="icon pull-right">
                     <em class="fa fa-plus"></em>
                 </span>
             </a>
             <ul class="children collapse" id="sub-item-1">
-                <li><a href="add-expense.jsp"><span class="fa fa-arrow-right">&nbsp;</span> Add Expenses</a></li>
-                <li><a href="manage-expense.jsp"><span class="fa fa-arrow-right">&nbsp;</span> Manage Expenses</a></li>
+                <li><a href="add-expense.html"><span class="fa fa-arrow-right">&nbsp;</span> Add Expenses</a></li>
+                <li><a href="manage-expense.html"><span class="fa fa-arrow-right">&nbsp;</span> Manage Expenses</a></li>
             </ul>
         </li>
 
         <li class="parent">
             <a data-toggle="collapse" href="#sub-item-2">
                 <em class="fa fa-navicon">&nbsp;</em>Expense Report
-                <span data-toggle="collapse" href="#sub-item-2" class="icon pull-right">
+                <span class="icon pull-right">
                     <em class="fa fa-plus"></em>
                 </span>
             </a>
             <ul class="children collapse" id="sub-item-2">
-                <li><a href="expense-datewise-reports.jsp"><span class="fa fa-arrow-right">&nbsp;</span> Daywise Expenses</a></li>
-                <li><a href="expense-monthwise-reports.jsp"><span class="fa fa-arrow-right">&nbsp;</span> Monthwise Expenses</a></li>
-                <li><a href="expense-yearwise-reports.jsp"><span class="fa fa-arrow-right">&nbsp;</span> Yearwise Expenses</a></li>
+                <li><a href="expense-datewise-reports.html"><span class="fa fa-arrow-right">&nbsp;</span> Daywise Expenses</a></li>
+                <li><a href="expense-monthwise-reports.html"><span class="fa fa-arrow-right">&nbsp;</span> Monthwise Expenses</a></li>
+                <li><a href="expense-yearwise-reports.html"><span class="fa fa-arrow-right">&nbsp;</span> Yearwise Expenses</a></li>
             </ul>
         </li>
 
-        <li><a href="user-profile.jsp"><em class="fa fa-user">&nbsp;</em> Profile</a></li>
-        <li><a href="change-password.jsp"><em class="fa fa-clone">&nbsp;</em> Change Password</a></li>
+        <li><a href="user-profile.html"><em class="fa fa-user">&nbsp;</em> Profile</a></li>
+        <li><a href="change-password.html"><em class="fa fa-clone">&nbsp;</em> Change Password</a></li>
         <li>
-            <a href="#" onclick="logout()"><em class="fa fa-power-off">&nbsp;</em> Logout</a>
+            <a href="#" onclick="logout()">
+                <em class="fa fa-power-off">&nbsp;</em> Logout
+            </a>
         </li>
     </ul>
 </div>
@@ -117,42 +103,46 @@
         </div>
     </div>
 
+    <!-- SUMMARY PANELS -->
     <div class="row">
         <div class="col-xs-6 col-md-3">
             <div class="panel panel-default">
                 <div class="panel-body easypiechart-panel">
                     <h4>Today's Expense</h4>
-                    <div class="easypiechart" id="easypiechart-blue" data-percent="100">
+                    <div class="easypiechart" data-percent="100">
                         <span class="percent" id="todayExpense">0</span>
                     </div>
                 </div>
             </div>
         </div>
+
         <div class="col-xs-6 col-md-3">
             <div class="panel panel-default">
                 <div class="panel-body easypiechart-panel">
                     <h4>Yesterday's Expense</h4>
-                    <div class="easypiechart" id="easypiechart-orange" data-percent="100">
+                    <div class="easypiechart" data-percent="100">
                         <span class="percent" id="yesterdayExpense">0</span>
                     </div>
                 </div>
             </div>
         </div>
+
         <div class="col-xs-6 col-md-3">
             <div class="panel panel-default">
                 <div class="panel-body easypiechart-panel">
                     <h4>Last 7 Days Expense</h4>
-                    <div class="easypiechart" id="easypiechart-teal" data-percent="100">
+                    <div class="easypiechart" data-percent="100">
                         <span class="percent" id="weekExpense">0</span>
                     </div>
                 </div>
             </div>
         </div>
+
         <div class="col-xs-6 col-md-3">
             <div class="panel panel-default">
                 <div class="panel-body easypiechart-panel">
                     <h4>Last 30 Days Expense</h4>
-                    <div class="easypiechart" id="easypiechart-red" data-percent="100">
+                    <div class="easypiechart" data-percent="100">
                         <span class="percent" id="monthExpense">0</span>
                     </div>
                 </div>
@@ -165,17 +155,18 @@
             <div class="panel panel-default">
                 <div class="panel-body easypiechart-panel">
                     <h4>Current Year Expenses</h4>
-                    <div class="easypiechart" id="easypiechart-red" data-percent="100">
+                    <div class="easypiechart" data-percent="100">
                         <span class="percent" id="yearExpense">0</span>
                     </div>
                 </div>
             </div>
         </div>
+
         <div class="col-xs-6 col-md-3">
             <div class="panel panel-default">
                 <div class="panel-body easypiechart-panel">
                     <h4>Total Expenses</h4>
-                    <div class="easypiechart" id="easypiechart-red" data-percent="100">
+                    <div class="easypiechart" data-percent="100">
                         <span class="percent" id="totalExpense">0</span>
                     </div>
                 </div>
@@ -183,42 +174,65 @@
         </div>
     </div>
 
-    <%@ include file="includes/footer.jsp" %>
 </div>
 
 <script src="js/jquery-1.11.1.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
 <script src="js/easypiechart.js"></script>
-<script src="js/easypiechart-data.js"></script>
 <script src="js/custom.js"></script>
 
 <script>
-async function logout() {
-    try {
-        await fetch('<%=request.getContextPath()%>/api/auth/logout');
-        window.location.href = 'index.jsp';
-    } catch (e) {
-        alert('Logout failed');
-    }
-}
+    const API_BASE = "/MVC_DETS/api";
 
-async function loadExpenses() {
-    try {
-        const res = await fetch('<%=request.getContextPath()%>/api/expenses/summary');
+    async function checkAuth() {
+        const res = await fetch(API_BASE + "/user/profile", {
+            credentials: "include"
+        });
+
+        if (res.status === 401) {
+            window.location.replace("index.html");
+            return;
+        }
+
         const data = await res.json();
-
-        document.getElementById('todayExpense').textContent = data.today;
-        document.getElementById('yesterdayExpense').textContent = data.yesterday;
-        document.getElementById('weekExpense').textContent = data.week;
-        document.getElementById('monthExpense').textContent = data.month;
-        document.getElementById('yearExpense').textContent = data.year;
-        document.getElementById('totalExpense').textContent = data.total;
-    } catch (err) {
-        console.error(err);
+        if (data.user && data.user.name) {
+            document.getElementById("username").textContent = data.user.name;
+        }
     }
-}
 
-loadExpenses();
+    async function loadExpenses() {
+        try {
+            const res = await fetch(API_BASE + "/expenses/summary", {
+                credentials: "include"
+            });
+
+            if (!res.ok) return;
+
+            const data = await res.json();
+
+            todayExpense.textContent = data.today;
+            yesterdayExpense.textContent = data.yesterday;
+            weekExpense.textContent = data.week;
+            monthExpense.textContent = data.month;
+            yearExpense.textContent = data.year;
+            totalExpense.textContent = data.total;
+
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function logout() {
+        await fetch(API_BASE + "/auth/logout", {
+            method: "POST",
+            credentials: "include"
+        });
+        window.location.replace("index.html");
+    }
+
+    checkAuth();
+    loadExpenses();
 </script>
+
 </body>
 </html>
