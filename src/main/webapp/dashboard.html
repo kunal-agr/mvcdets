@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>Daily Expense Tracker - Dashboard</title>
-
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <link href="css/bootstrap.min.css" rel="stylesheet">
@@ -13,12 +12,10 @@
 </head>
 
 <body>
-
 <nav class="navbar navbar-custom navbar-fixed-top" role="navigation">
     <div class="container-fluid">
         <div class="navbar-header">
-            <button type="button" class="navbar-toggle collapsed"
-                    data-toggle="collapse" data-target="#sidebar-collapse">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#sidebar-collapse">
                 <span class="sr-only">Toggle navigation</span>
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
@@ -54,9 +51,7 @@
         <li class="parent">
             <a data-toggle="collapse" href="#sub-item-1">
                 <em class="fa fa-navicon">&nbsp;</em>Expenses
-                <span class="icon pull-right">
-                    <em class="fa fa-plus"></em>
-                </span>
+                <span class="icon pull-right"><em class="fa fa-plus"></em></span>
             </a>
             <ul class="children collapse" id="sub-item-1">
                 <li><a href="add-expense.html"><span class="fa fa-arrow-right">&nbsp;</span> Add Expenses</a></li>
@@ -67,9 +62,7 @@
         <li class="parent">
             <a data-toggle="collapse" href="#sub-item-2">
                 <em class="fa fa-navicon">&nbsp;</em>Expense Report
-                <span class="icon pull-right">
-                    <em class="fa fa-plus"></em>
-                </span>
+                <span class="icon pull-right"><em class="fa fa-plus"></em></span>
             </a>
             <ul class="children collapse" id="sub-item-2">
                 <li><a href="expense-datewise-reports.html"><span class="fa fa-arrow-right">&nbsp;</span> Daywise Expenses</a></li>
@@ -89,7 +82,6 @@
 </div>
 
 <div class="col-sm-9 col-sm-offset-3 col-lg-10 col-lg-offset-2 main">
-
     <div class="row">
         <ol class="breadcrumb">
             <li><a href="#"><em class="fa fa-home"></em></a></li>
@@ -172,18 +164,17 @@
             </div>
         </div>
     </div>
-
 </div>
 
 <script src="js/jquery-1.11.1.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
-<script src="js/easypiechart.js"></script>
-<script src="js/custom.js"></script>
 
 <script>
-    const API_BASE = "/MVC_DETS/api";
+    // SMART API PATH DETECTION
+    const API_BASE = window.location.pathname.includes("/MVC_DETS")
+                     ? "/MVC_DETS/api"
+                     : "/api";
 
-    // Immediate fix: Load name from sessionStorage while waiting for API
     function displayCachedName() {
         const cachedName = sessionStorage.getItem("userName");
         if (cachedName) {
@@ -193,7 +184,7 @@
 
     async function checkAuth() {
         try {
-            const res = await fetch(API_BASE + "/user/profile", {
+            const res = await fetch(`${API_BASE}/user/profile`, {
                 credentials: "include"
             });
 
@@ -204,10 +195,11 @@
             }
 
             const data = await res.json();
-            if (data.user && data.user.name) {
-                document.getElementById("username").textContent = data.user.name;
-                // Update cache if name changed
-                sessionStorage.setItem("userName", data.user.name);
+            const user = data.user || data; // Handle different JSON structures
+
+            if (user && user.name) {
+                document.getElementById("username").textContent = user.name;
+                sessionStorage.setItem("userName", user.name);
             }
         } catch (e) {
             console.error("Auth check failed:", e);
@@ -216,15 +208,18 @@
 
     async function loadExpenses() {
         try {
-            const res = await fetch(API_BASE + "/expenses/summary", {
+            const res = await fetch(`${API_BASE}/expenses/summary`, {
                 credentials: "include"
             });
 
-            if (!res.ok) return;
+            if (!res.ok) {
+                console.error("Expense fetch failed with status:", res.status);
+                return;
+            }
 
             const data = await res.json();
 
-            // Use '|| 0' to prevent empty strings if data is missing
+            // Ensuring values are numbers or 0, preventing empty strings
             document.getElementById("todayExpense").textContent = data.today || 0;
             document.getElementById("yesterdayExpense").textContent = data.yesterday || 0;
             document.getElementById("weekExpense").textContent = data.week || 0;
@@ -239,7 +234,7 @@
 
     async function logout() {
         try {
-            await fetch(API_BASE + "/auth/logout", {
+            await fetch(`${API_BASE}/auth/logout`, {
                 method: "POST",
                 credentials: "include"
             });
@@ -248,7 +243,7 @@
         window.location.replace("index.html");
     }
 
-    // Execution order
+    // Execution
     displayCachedName();
     checkAuth();
     loadExpenses();

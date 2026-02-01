@@ -22,14 +22,20 @@
     const { useState, useEffect } = React;
 
     function UserProfileApp() {
+        // AUTO-DETECT API PATH: Fixes the 'empty fields on deployment' issue
+        const API_BASE = window.location.pathname.includes("/MVC_DETS")
+                         ? "/MVC_DETS/api"
+                         : "/api";
+
         const [user, setUser] = useState({
-            name: sessionStorage.getItem("userName") || '', // Initial load from storage to prevent empty sidebar
+            name: sessionStorage.getItem("userName") || '',
             email: '',
             mobile: '',
             createdAt: ''
         });
+
+        const [loading, setLoading] = useState(true);
         const [message, setMessage] = useState({ text: '', type: '' });
-        const API_BASE = "/MVC_DETS/api";
 
         useEffect(() => {
             fetchProfile();
@@ -37,7 +43,6 @@
 
         const fetchProfile = async () => {
             try {
-                // ADDED credentials: "include" to keep the session alive
                 const res = await fetch(`${API_BASE}/user/profile`, {
                     credentials: "include"
                 });
@@ -48,14 +53,15 @@
                 }
 
                 const data = await res.json();
-                const userData = data.user;
+
+                // Robust check for nested data structure
+                const userData = data.user || data;
 
                 if (userData) {
-                    // Date formatting logic
-                    let formattedDate = "";
+                    let formattedDate = "Not Available";
                     if (userData.createdAt) {
                         let raw = userData.createdAt;
-                        let date = !isNaN(raw) ? new Date(Number(raw)) : new Date(raw.replace(" ", "T"));
+                        let date = !isNaN(raw) ? new Date(Number(raw)) : new Date(raw.toString().replace(" ", "T"));
                         formattedDate = date.toLocaleDateString("en-IN", {
                             day: "2-digit",
                             month: "long",
@@ -64,27 +70,30 @@
                     }
 
                     setUser({
-                        name: userData.name || '',
+                        name: userData.name || userData.fullname || '',
                         email: userData.email || '',
-                        mobile: userData.mobile || '',
+                        mobile: userData.mobile || userData.contactnumber || '',
                         createdAt: formattedDate
                     });
 
-                    // Sync storage so other pages get the updated name
-                    sessionStorage.setItem("userName", userData.name);
+                    if (userData.name) sessionStorage.setItem("userName", userData.name);
                 }
             } catch (err) {
-                console.error("Failed to load profile", err);
+                console.error("Fetch Error:", err);
+                setMessage({ text: "Server connection failed. Check API path.", type: "danger" });
+            } finally {
+                setLoading(false);
             }
         };
 
         const handleUpdate = async (e) => {
             e.preventDefault();
+            setMessage({ text: "Updating...", type: "info" });
             try {
                 const res = await fetch(`${API_BASE}/user/profile`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    credentials: "include", // ADDED
+                    credentials: "include",
                     body: JSON.stringify({
                         fullname: user.name,
                         contactnumber: user.mobile
@@ -93,29 +102,27 @@
 
                 const data = await res.json();
                 if (res.ok) {
-                    setMessage({ text: data.message || "Profile Updated!", type: "success" });
-                    sessionStorage.setItem("userName", user.name); // Update sidebar name immediately
+                    setMessage({ text: data.message || "Profile Updated Successfully!", type: "success" });
+                    sessionStorage.setItem("userName", user.name);
                 } else {
                     setMessage({ text: data.error || "Update failed", type: "danger" });
                 }
             } catch (err) {
-                setMessage({ text: "Network error", type: "danger" });
+                setMessage({ text: "Network error during update", type: "danger" });
             }
         };
 
         const logout = async (e) => {
             if(e) e.preventDefault();
-            await fetch(`${API_BASE}/auth/logout`, {
-                method: "POST",
-                credentials: "include"
-            });
+            try {
+                await fetch(`${API_BASE}/auth/logout`, { method: "POST", credentials: "include" });
+            } catch(e) {}
             sessionStorage.clear();
             window.location.replace("index.html");
         };
 
         return (
             <div>
-                {/* NAVBAR */}
                 <nav className="navbar navbar-custom navbar-fixed-top" role="navigation">
                     <div className="container-fluid">
                         <div className="navbar-header">
@@ -132,7 +139,6 @@
                     </div>
                 </nav>
 
-                {/* SIDEBAR */}
                 <div id="sidebar-collapse" className="col-sm-3 col-lg-2 sidebar">
                     <div className="profile-sidebar">
                         <div className="profile-usertitle">
@@ -145,51 +151,26 @@
                     </div>
                     <div className="divider"></div>
                     <ul className="nav menu">
-                        <li>
-                            <a href="dashboard.html">
-                                <em className="fa fa-dashboard">&nbsp;</em> Dashboard
-                            </a>
-                        </li>
+                        <li><a href="dashboard.html"><em className="fa fa-dashboard">&nbsp;</em> Dashboard</a></li>
                         <li className="parent">
                             <a data-toggle="collapse" href="#sub-item-1">
-                                <em className="fa fa-navicon">&nbsp;</em>Expenses
-                                <span className="icon pull-right"><em className="fa fa-plus"></em></span>
+                                <em className="fa fa-navicon">&nbsp;</em>Expenses <span className="icon pull-right"><em className="fa fa-plus"></em></span>
                             </a>
                             <ul className="children collapse" id="sub-item-1">
                                 <li><a href="add-expense.html"><span className="fa fa-arrow-right">&nbsp;</span> Add Expenses</a></li>
                                 <li><a href="manage-expense.html"><span className="fa fa-arrow-right">&nbsp;</span> Manage Expenses</a></li>
                             </ul>
                         </li>
-                        <li className="parent">
-                            <a data-toggle="collapse" href="#sub-item-2">
-                                <em className="fa fa-navicon">&nbsp;</em>Expense Report
-                                <span className="icon pull-right"><em className="fa fa-plus"></em></span>
-                            </a>
-                            <ul className="children collapse" id="sub-item-2">
-                                <li><a href="expense-datewise-reports.html"><span className="fa fa-arrow-right">&nbsp;</span> Daywise Expenses</a></li>
-                                <li><a href="expense-monthwise-reports.html"><span className="fa fa-arrow-right">&nbsp;</span> Monthwise Expenses</a></li>
-                                <li><a href="expense-yearwise-reports.html"><span className="fa fa-arrow-right">&nbsp;</span> Yearwise Expenses</a></li>
-                            </ul>
-                        </li>
-                        <li className="active">
-                            <a href="user-profile.html"><em className="fa fa-user">&nbsp;</em> Profile</a>
-                        </li>
-                        <li>
-                            <a href="change-password.html"><em className="fa fa-clone">&nbsp;</em> Change Password</a>
-                        </li>
-                        <li>
-                            <a href="#" onClick={logout}>
-                                <em className="fa fa-power-off">&nbsp;</em> Logout
-                            </a>
-                        </li>
+                        <li className="active"><a href="user-profile.html"><em className="fa fa-user">&nbsp;</em> Profile</a></li>
+                        <li><a href="change-password.html"><em className="fa fa-clone">&nbsp;</em> Change Password</a></li>
+                        <li><a href="#" onClick={logout}><em className="fa fa-power-off">&nbsp;</em> Logout</a></li>
                     </ul>
                 </div>
 
-                {/* MAIN CONTENT */}
                 <div className="col-sm-9 col-sm-offset-3 col-lg-10 col-lg-offset-2 main">
                     <div className="row">
                         <ol className="breadcrumb">
-                            <li><a href="#"><em className="fa fa-home"></em></a></li>
+                            <li><a href="dashboard.html"><em className="fa fa-home"></em></a></li>
                             <li className="active">Profile</li>
                         </ol>
                     </div>
@@ -203,43 +184,46 @@
                     <div className="panel panel-default">
                         <div className="panel-heading">Update Profile</div>
                         <div className="panel-body">
-
                             {message.text && (
                                 <div className={`alert alert-${message.type}`} role="alert">
                                     {message.text}
                                 </div>
                             )}
 
-                            <form onSubmit={handleUpdate}>
-                                <div className="form-group">
-                                    <label>Full Name</label>
-                                    <input
-                                        className="form-control"
-                                        value={user.name}
-                                        onChange={(e) => setUser({...user, name: e.target.value})}
-                                        required
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label>Email</label>
-                                    <input className="form-control" value={user.email} readOnly />
-                                </div>
-                                <div className="form-group">
-                                    <label>Mobile Number</label>
-                                    <input
-                                        className="form-control"
-                                        value={user.mobile}
-                                        maxLength="10"
-                                        onChange={(e) => setUser({...user, mobile: e.target.value})}
-                                        required
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label>Registration Date</label>
-                                    <input className="form-control" value={user.createdAt} readOnly />
-                                </div>
-                                <button type="submit" className="btn btn-primary">Update</button>
-                            </form>
+                            {loading ? (
+                                <p className="text-center">Loading profile details...</p>
+                            ) : (
+                                <form onSubmit={handleUpdate}>
+                                    <div className="form-group">
+                                        <label>Full Name</label>
+                                        <input
+                                            className="form-control"
+                                            value={user.name}
+                                            onChange={(e) => setUser({...user, name: e.target.value})}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Email</label>
+                                        <input className="form-control" value={user.email} readOnly style={{backgroundColor: '#eee'}} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Mobile Number</label>
+                                        <input
+                                            className="form-control"
+                                            value={user.mobile}
+                                            maxLength="10"
+                                            onChange={(e) => setUser({...user, mobile: e.target.value})}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Registration Date</label>
+                                        <input className="form-control" value={user.createdAt} readOnly style={{backgroundColor: '#eee'}} />
+                                    </div>
+                                    <button type="submit" className="btn btn-primary">Update</button>
+                                </form>
+                            )}
                         </div>
                     </div>
                 </div>
